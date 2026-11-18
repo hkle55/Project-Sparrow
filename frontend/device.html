@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sparrow · Device preview</title>
+  <style>
+    body { margin:0; background:#222; color:#ccc; font-family:system-ui,sans-serif;
+      display:flex; flex-direction:column; align-items:center; gap:14px; padding:16px; }
+    .shell { background:#e8e8e8; padding:18px 14px; border-radius:18px; box-shadow:0 4px 18px #000a; }
+    canvas { display:block; width:min(90vw, 720px); image-rendering:pixelated; border-radius:4px; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; }
+    select, button { font:inherit; padding:6px 10px; }
+    p { max-width:720px; font-size:13px; line-height:1.5; margin:0; }
+  </style>
+</head>
+<body>
+  <div class="shell"><canvas id="lcd" width="240" height="135"></canvas></div>
+  <div class="row">
+    <label>Data <select id="sim"><option value="">Real SEPTA (work)</option></select></label>
+    <button id="btn">Button A (refresh)</button>
+  </div>
+  <p>Pixel-accurate preview of the physical Sparrow's 240×135 screen (M5Stack StickS3, landscape).
+    It draws <code>/api/v1/device</code> with the same rules as the firmware (<code>firmware/src/core</code>):
+    counts down locally every second, polls every 20 s. Work commute only (V1).</p>
+<script>
+"use strict";
+const W = 240, H = 135, POLL_MS = 20000, NO_CONN_S = 45;
+const c = document.getElementById("lcd").getContext("2d");
+const st = { d: null, skew: 0, lastOk: 0, err: null, sim: "" };
+const nowS = () => Date.now() / 1000 + st.skew;
+const floorMin = (s) => Math.max(0, Math.floor(s / 60));
+const BLACK = "#000", WHITE = "#fff", GREY = "#888", RED = "#ff3b30", YELLOW = "#ffd23f", GREEN = "#34c759";
+
+async function poll() {
+  const sim = st.sim;
+  try {
+    const r = await fetch("/api/v1/device" + (sim ? `?sim=${sim}` : ""), { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if (sim !== st.sim) return;
+    st.d = d; st.skew = d.now - Date.now() / 1000; st.lastOk = Date.now() / 1000; st.err = null;
+  } catch (e) { st.err = String(e); }
+  draw();
+}
+
+// --- same decisions as firmware/src/core/sparrow_core.cpp -------------------------------
+function heroState(rec, now) {
+  const left = rec.l - now, untilBus = rec.b - now;
+  if (rec.a === "tight" || left < 0) return untilBus >= rec.w ? ["TIGHT", 0] : ["CHECK", 0];
+  if (left < 60) return ["NOW", 0];
+  if (left < st.d.rdy) return ["READY", floorMin(left)];
+  return ["LEAVE", floorMin(left)];
+}
+function cellState(at, walk, buffer, now) {
+  const toBus = at - now;
+  if (toBus < walk) return "missed";
+  if (toBus < walk + buffer) return "tight";
+  return "ok";
+}
+
+function text(s, x, y, size, color, align = "left", weight = "bold") {
+  c.font = `${weight} ${size}px Helvetica, Arial, sans-serif`;
+  c.fillStyle = color; c.textAlign = align; c.textBaseline = "alphabetic";
+  c.fillText(s, x, y);
+  return c.measureText(s).width;
+}
+
+function draw() {
+  c.fillStyle = BLACK; c.fillRect(0, 0, W, H);
+  const d = st.d, now = nowS();
+  const sinceOk = st.lastOk ? Date.now() / 1000 - st.lastOk : Infinity;
+  const noConn = st.err && sinceOk > NO_CONN_S;
+  if (!d) { text(st.err ? "NO CONNECTION" : "CONNECTING…", W / 2, 75, 18, st.err ? RED : WHITE, "center"); return; }
+
+  // status chip (text, not color alone)
+  const chip = noConn ? ["NO WIFI", RED] : d.sim ? ["SIM", YELLOW]
+    : { live: ["LIVE", GREEN], stale: ["STALE", YELLOW], offline: ["SCHED", YELLOW] }[d.st];
+  c.font = "bold 11px Helvetica, Arial"; const cw = c.measureText(chip[0]).width + 8;
+  c.strokeStyle = chip[1]; c.lineWidth = 1.5; c.strokeRect(W - cw - 3, 3, cw, 15);
+  text(chip[0], W - cw / 2 - 3, 14, 11, chip[1], "center");
+
+  const rec = d.rec;
+  if (!rec) {
+    text("NO BUS", 6, 16, 14, GREY);
+    text(d.msg || "", W / 2, 60, 12, WHITE, "center", "normal");
+  } else {
+    text(`BUS ${rec.r}`, 6, 17, 17, WHITE);
+    const [state, m] = heroState(rec, now);
+    const approx = rec.x || noConn;
+    if (state === "LEAVE" || state === "READY") {
+      text(state === "LEAVE" ? "LEAVE IN" : "GET READY", 8, 40, 12, state === "READY" ? YELLOW : GREY);
+      const wNum = text(`${m}`, 8, 84, 52, WHITE);
+      text("min", 14 + wNum, 84, 18, WHITE);
+      if (state === "READY") { c.strokeStyle = YELLOW; c.lineWidth = 2; c.strokeRect(4, 26, 120 + wNum / 2, 64); }
+    } else if (state === "NOW") {
+      c.fillStyle = WHITE; c.fillRect(4, 28, W - 8, 56);
+      text("LEAVE NOW", W / 2, 70, 34, BLACK, "center");
+    } else if (state === "TIGHT") {
+      c.setLineDash([5, 3]); c.strokeStyle = RED; c.lineWidth = 2; c.strokeRect(4, 28, W - 8, 56); c.setLineDash([]);
+      text("TIGHT · GO", W / 2, 66, 30, WHITE, "center");
+      const spare = rec.b - now - rec.w;
+      text(spare < 60 ? "<1 min to spare" : `${floorMin(spare)} min to spare`, W / 2, 80, 11, RED, "center", "normal");
+    } else {
+      text("CHECKING…", W / 2, 66, 22, GREY, "center");
+    }
+    if (approx && state !== "CHECK") text("~ not live", W - 6, 40, 11, YELLOW, "right");
+    // secondary line: safer alternative, or reason
+    let line = rec.why;
+    if (rec.alt) {
+      const al = rec.alt.l - now;
+      line = al >= 0 ? `Safer: ${rec.alt.r} leave in ${floorMin(al)}m` : `Safer: bus ${rec.alt.r}`;
+    }
+    if (noConn) line = "Offline: countdown may be off";
+    text(line, 6, 100, 11, noConn ? RED : GREY, "left", "normal");
+  }
+
+  // arrival rows
+  const buffer = rec ? rec.b - rec.l - rec.w : 120;
+  d.rows.forEach((row, i) => {
+    const y = 117 + i * 16;
+    text(row.r, 6, y, 14, WHITE);
+    for (let j = 0; j < 3; j++) {
+      const x = 92 + j * 52;
+      const a = row.t[j];
+      if (!a) { text("–", x, y, 14, GREY, "right"); continue; }
+      const [at, kind] = a;
+      const mins = floorMin(at - now);
+      const s = (kind === "l" ? "" : "~") + (at - now <= 30 ? "now" : `${mins}`);
+      const cs = cellState(at, row.w, buffer, now);
+      const col = cs === "missed" ? GREY : kind === "l" ? WHITE : YELLOW;
+      const w = text(s, x, y, 14, col, "right", kind === "l" ? "bold" : "normal");
+      if (cs === "missed") { c.fillStyle = GREY; c.fillRect(x - w, y - 5, w, 1.5); }
+      if (cs === "tight") text("!", x + 2, y, 14, RED);
+    }
+    text("min", W - 4, y, 10, GREY, "right", "normal");
+  });
+}
+
+fetch("/api/v1/scenarios").then(r => r.json()).then(list => {
+  for (const s of list) { const o = document.createElement("option"); o.value = s.id; o.textContent = `SIM: ${s.label}`; document.getElementById("sim").append(o); }
+}).catch(() => {});
+document.getElementById("sim").onchange = (e) => { st.sim = e.target.value; st.d = null; poll(); };
+document.getElementById("btn").onclick = poll;
+poll(); setInterval(poll, POLL_MS); setInterval(draw, 1000);
+</script>
+</body>
+</html>
