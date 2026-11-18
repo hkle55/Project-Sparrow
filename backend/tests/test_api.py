@@ -51,6 +51,11 @@ class Upstream:
         return httpx.Response(200, json=self.schedules.get(key, {}))
 
 
+def app_for(tc, **kw):
+    kw = {"db_path": ":memory:", "collect": False, "access_token": "", **kw}
+    return main_mod.create_app(CFG, tc, **kw)
+
+
 def make_client(upstream, monkeypatch, now=NOW):
     monkeypatch.setattr(main_mod, "now_utc", lambda: now)
     tc = TransitClient(
@@ -61,7 +66,7 @@ def make_client(upstream, monkeypatch, now=NOW):
         clock=lambda: now,
         attempts=1,
     )
-    return TestClient(main_mod.create_app(CFG, tc))
+    return TestClient(app_for(tc))
 
 
 @pytest.fixture
@@ -120,7 +125,7 @@ def test_outage_keeps_last_good_then_goes_offline(upstream, monkeypatch):
         http=httpx.AsyncClient(transport=httpx.MockTransport(upstream)),
         clock=lambda: now["t"], attempts=1, monotonic=lambda: now["t"].timestamp(),
     )
-    with TestClient(main_mod.create_app(CFG, tc)) as c:
+    with TestClient(app_for(tc)) as c:
         assert c.get("/api/v1/commute/work").json()["data"]["status"] == "live"
         upstream.down = True
         now["t"] = NOW + timedelta(minutes=2)  # feed now 145 s old
@@ -199,3 +204,56 @@ def test_tight_scenario_includes_safer_alternative(upstream, monkeypatch):
         rec = c.get("/api/v1/commute/work?sim=tight").json()["rec"]
     assert rec["action"] == "tight" and rec["leave_in_s"] == 0
     assert rec["alt"]["route"] == "40" and rec["alt"]["action"] == "leave_in"  # 24m 40 beats 19m 42
+
+
+# --- observations, report, access token ----------------------------------------------------
+
+
+def test_observation_roundtrip(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        opts = c.get("/api/v1/observe/options").json()
+        assert {(o["route"], o["stop_id"]) for o in opts} == {("40", S40), ("42", S42)}
+        r = c.post("/api/v1/observations", json={"route": "40", "stop_id": S40,
+                                                 "vehicle_id": " 3381 "})
+        assert r.status_code == 201 and r.json()["arrived_at"] == NOW.timestamp()
+        rows = c.get("/api/v1/observations").json()
+        assert rows[0]["vehicle_id"] == "3381"
+        assert c.delete(f"/api/v1/observations/{rows[0]['id']}").status_code == 204
+        assert c.get("/api/v1/observations").json() == []
+        assert c.delete("/api/v1/observations/999").status_code == 404
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"route": "40", "stop_id": "nope"},
+        {"route": "99", "stop_id": S40},
+        {"route": "40", "stop_id": S40, "arrived_at": NOW.timestamp() - 2 * 86400},
+        {"route": "40", "stop_id": S40, "arrived_at": NOW.timestamp() + 3600},
+    ],
+)
+def test_observation_validation(upstream, monkeypatch, body):
+    with make_client(upstream, monkeypatch) as c:
+        assert c.post("/api/v1/observations", json=body).status_code == 422
+
+
+def test_validation_report_endpoint(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        r = c.get("/api/v1/validation/report")
+    assert r.status_code == 200 and "Not enough data yet" in r.text
+
+
+def test_access_token(upstream, monkeypatch):
+    monkeypatch.setattr(main_mod, "now_utc", lambda: NOW)
+    tc = TransitClient({"40", "42"}, {S40, S42}, NY, clock=lambda: NOW, attempts=1,
+                       http=httpx.AsyncClient(transport=httpx.MockTransport(upstream)))
+    with TestClient(app_for(tc, access_token="s3cret")) as c:
+        assert c.get("/health").status_code == 200
+        assert c.get("/api/v1/commute/work").status_code == 401
+        assert c.get("/").status_code == 401
+        work = "/api/v1/commute/work"
+        assert c.get(work, headers={"X-Sparrow-Token": "wrong"}).status_code == 401
+        assert c.get(work, headers={"X-Sparrow-Token": "s3cret"}).status_code == 200
+        r = c.get("/?key=s3cret")
+        assert r.status_code == 200 and "sparrow_token" in r.headers["set-cookie"]
+        assert c.get("/api/v1/commute/work").status_code == 200  # cookie now set
