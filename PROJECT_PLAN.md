@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-**Milestone 4: Prediction validation** (M0–M3 done).
+**Milestone 4: Prediction validation**: tooling done, data collection needs hosting (M5).
 
 ## Milestones
 
@@ -12,7 +12,7 @@
 | 1 | SEPTA research and data retrieval | Done |
 | 2 | Prediction and recommendation engine and API | Done |
 | 3 | Web device simulator | Done (local) |
-| 4 | Prediction validation (observation logging and report) | Next |
+| 4 | Prediction validation (observation logging and report) | Tooling done; collecting data |
 | 5 | Remote deployment (research and recommendation, no paid infra without approval) | Not started |
 | 6 | Hardware research and BOM (no purchases without approval) | Not started |
 | 7 | ESP32 firmware | Not started |

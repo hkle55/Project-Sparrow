@@ -4,6 +4,15 @@ All notable changes, grouped by milestone. Dates are in America/New_York.
 
 ## Unreleased
 
+### Milestone 4: Prediction validation
+- Collector logs prediction changes, poll freshness, and GPS vehicle positions to SQLite
+  (`data/`, gitignored). Runs in-app (`SPARROW_COLLECT=1`) or via `scripts/collect.py`.
+- Accuracy analysis at 2/5/10/15-min leads against manual observations and GPS-inferred
+  arrivals, kept separate. SEPTA's own final prediction is never used as truth.
+- `/observe` phone page for manual arrival taps (offline queue, undo), observation API,
+  Markdown report at `/api/v1/validation/report` and `scripts/validation_report.py`.
+- Optional `SPARROW_ACCESS_TOKEN` protects every route except `/health`.
+
 ### TIGHT CONNECTION state
 - Buses reachable only by cutting into the safety buffer are recommended as TIGHT (with the
   safer bus shown) only when no safe bus boards within `tight_max_wait_min` (10) after them.

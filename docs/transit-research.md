@@ -53,6 +53,19 @@ Older `api.goswift.ly` feed URLs are listed as replaced by the Mobility Database
   flag. TransitView's `late`/`Offset` field gives minutes late per vehicle (negative = early,
   **unverified** for negative values; none observed).
 
+## Vehicle Positions: what the status means
+
+Compared side by side with trip updates (2026-11-18, 25 buses on 40/42):
+
+- `IN_TRANSIT_TO N` means heading to stop sequence N (trip updates list N first).
+- `STOPPED_AT N` was reported for 20 of 25 buses, so it isn't literally "stopped". It
+  means N is the last stop reached, and trip updates then list N+1 first.
+- `current_stop_sequence` uses the same numbering as trip updates.
+- Vehicle reports were 12–17 s old at fetch. Trip updates sometimes still listed the
+  just-reached stop with a past time (up to ~1 min).
+
+Sparrow uses this for *inferred* arrival windows in validation (see docs/validation.md).
+
 ## Directions and stops
 
 From static GTFS `directions.txt` (feed `v202611220`):
