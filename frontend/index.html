@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Sparrow</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="stage">
+    <section class="device" id="device" aria-live="polite">
+      <div class="sim-banner" id="simBanner" hidden>SIMULATION · NOT REAL BUSES</div>
+
+      <header class="topbar">
+        <span class="brand">SPARROW</span>
+        <span class="mode" id="modeLabel">—</span>
+        <span class="badge" id="badge">…</span>
+      </header>
+
+      <div class="hero" id="hero">
+        <div class="route" id="route">&nbsp;</div>
+        <div class="action" id="action">LOADING</div>
+        <div class="reason" id="reason">&nbsp;</div>
+      </div>
+
+      <div class="rows" id="rows"></div>
+
+      <footer class="foot">
+        <span id="updated">&nbsp;</span>
+        <span id="conn"></span>
+      </footer>
+    </section>
+
+    <div class="controls">
+      <div class="buttons">
+        <button type="button" id="modeBtn" class="hw">Switch mode</button>
+        <button type="button" id="refreshBtn" class="hw">Refresh</button>
+      </div>
+      <label class="sim">
+        Simulation
+        <select id="simSelect">
+          <option value="">Off (real SEPTA data)</option>
+        </select>
+      </label>
+      <label class="sim"><input type="checkbox" id="netSim"> Simulate lost connection</label>
+      <p class="legend">
+        <b>12m</b> live · <i>~12m</i> scheduled/estimated (not live) ·
+        <b>12m!</b> tight (only if you hurry) · <s>12m</s> can't make it
+      </p>
+    </div>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

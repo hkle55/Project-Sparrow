@@ -45,7 +45,7 @@ def _arrival_out(p: Plan, now: datetime) -> ArrivalOut:
     )
 
 
-def _rec_out(r: Recommendation) -> RecommendationOut:
+def _rec_out(r: Recommendation, settings: Settings) -> RecommendationOut:
     return RecommendationOut(
         route=r.route,
         action=r.action.value,
@@ -55,6 +55,7 @@ def _rec_out(r: Recommendation) -> RecommendationOut:
         kind=r.plan.arrival.kind.value,
         approx=r.approximate,
         reason=r.reason,
+        ready_s=math.floor(settings.get_ready_window_min * 60),
     )
 
 
@@ -106,7 +107,7 @@ def build_response(
         else:
             message = "No bus catchable with the current buffer"
     return CommuteOut(
-        **base, configured=True, rec=_rec_out(rec) if rec else None, routes=routes,
+        **base, configured=True, rec=_rec_out(rec, settings) if rec else None, routes=routes,
         message=message,
     )
 

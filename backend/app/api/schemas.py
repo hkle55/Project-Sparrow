@@ -49,6 +49,7 @@ class RecommendationOut(BaseModel):
     kind: Literal["live", "estimated", "scheduled", "stale"]
     approx: bool  # true unless based on a fresh live prediction
     reason: str
+    ready_s: int  # client shows GET READY when leave_in_s drops below this (LEAVE NOW < 60)
 
 
 class CommuteOut(BaseModel):
