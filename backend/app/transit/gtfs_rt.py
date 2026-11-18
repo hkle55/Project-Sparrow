@@ -8,9 +8,17 @@ from datetime import UTC, datetime
 from google.protobuf.message import DecodeError
 from google.transit import gtfs_realtime_pb2 as rt
 
-from .models import StopPrediction, TransitDataError, TripState, TripUpdatesSnapshot
+from .models import (
+    StopPrediction,
+    TransitDataError,
+    TripState,
+    TripUpdatesSnapshot,
+    VehicleSample,
+    VehicleSnapshot,
+)
 
 TRIP_UPDATES_URL = "https://www3.septa.org/gtfsrt/septa-pa-us/Trip/rtTripUpdates.pb"
+VEHICLE_POSITIONS_URL = "https://www3.septa.org/gtfsrt/septa-pa-us/Vehicle/rtVehiclePosition.pb"
 
 _SKIPPED = rt.TripUpdate.StopTimeUpdate.SKIPPED
 _CANCELED = rt.TripDescriptor.CANCELED
@@ -66,6 +74,7 @@ def parse_trip_updates(
             skipped_stop_ids=frozenset(
                 s.stop_id for s in tu.stop_time_update if s.schedule_relationship == _SKIPPED
             ),
+            start_date=trip.start_date or None,
         )
         if canceled:
             continue
@@ -89,9 +98,50 @@ def parse_trip_updates(
                     arrival=_ts(when),
                     vehicle_id=vehicle,
                     trip_timestamp=trip_ts,
+                    start_date=trip.start_date or None,
                 )
             )
 
     for preds in snapshot.predictions.values():
         preds.sort(key=lambda p: p.arrival)
     return snapshot
+
+
+_VSTATUS = {0: "INCOMING_AT", 1: "STOPPED_AT", 2: "IN_TRANSIT_TO"}
+
+
+def parse_vehicle_positions(content: bytes, routes: Iterable[str]) -> VehicleSnapshot:
+    """Extract vehicle positions for trips on `routes`."""
+    routes = set(routes)
+    feed = rt.FeedMessage()
+    try:
+        feed.ParseFromString(content)
+    except DecodeError as exc:
+        raise TransitDataError(f"vehicle positions feed is not valid GTFS-RT: {exc}") from exc
+    if not feed.header.timestamp:
+        raise TransitDataError("vehicle positions feed has no header timestamp")
+    snap = VehicleSnapshot(feed_timestamp=_ts(feed.header.timestamp))
+    for entity in feed.entity:
+        if not entity.HasField("vehicle"):
+            continue
+        v = entity.vehicle
+        if v.trip.route_id not in routes or not v.trip.trip_id or not v.timestamp:
+            continue
+        snap.vehicles.append(
+            VehicleSample(
+                vehicle_id=v.vehicle.id or entity.id,
+                trip_id=v.trip.trip_id,
+                route=v.trip.route_id,
+                direction_id=v.trip.direction_id if v.trip.HasField("direction_id") else None,
+                start_date=v.trip.start_date or None,
+                stop_sequence=(
+                    v.current_stop_sequence if v.HasField("current_stop_sequence") else None
+                ),
+                stop_id=v.stop_id or None,
+                status=_VSTATUS.get(v.current_status, "IN_TRANSIT_TO"),
+                timestamp=_ts(v.timestamp),
+                lat=v.position.latitude if v.HasField("position") else None,
+                lon=v.position.longitude if v.HasField("position") else None,
+            )
+        )
+    return snap
