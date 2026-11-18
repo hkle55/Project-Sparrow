@@ -1,7 +1,7 @@
 """Sparrow HTTP API. Also serves the web device simulator from /frontend.
 
 Environment:
-- SPARROW_CONFIG / SPARROW_CONFIG_TOML: commute profile (see app/config.py)
+- SPARROW_CONFIG_TOML (contents) or SPARROW_CONFIG (path): commute profile (app/config.py)
 - SPARROW_DB: SQLite path for validation data (default data/sparrow.sqlite)
 - SPARROW_COLLECT=1: run the prediction collector in the background
 - SPARROW_ACCESS_TOKEN: if set, every route except /health needs the token, given as the
@@ -34,6 +34,8 @@ from app.validation.collector import Collector
 from app.validation.report import render
 
 log = logging.getLogger("sparrow")
+if not logging.getLogger().handlers:  # show app/collector logs next to uvicorn's
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 FRONTEND = Path(__file__).resolve().parents[3] / "frontend"
 DEFAULT_DB = REPO_ROOT / "data" / "sparrow.sqlite"
 TOKEN_COOKIE = "sparrow_token"
