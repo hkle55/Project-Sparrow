@@ -13,7 +13,7 @@
 | 2 | Prediction and recommendation engine and API | Done |
 | 3 | Web device simulator | Done (local) |
 | 4 | Prediction validation (observation logging and report) | Tooling done; collecting data |
-| 5 | Remote deployment (research and recommendation, no paid infra without approval) | Not started |
+| 5 | Remote deployment (research and recommendation, no paid infra without approval) | Prepared; awaiting approval to spend ~$2–3/mo |
 | 6 | Hardware research and BOM (no purchases without approval) | Not started |
 | 7 | ESP32 firmware | Not started |
 | 8 | Battery and physical product | Not started |

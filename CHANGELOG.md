@@ -4,6 +4,13 @@ All notable changes, grouped by milestone. Dates are in America/New_York.
 
 ## Unreleased
 
+### Milestone 5 prep: Deployment
+- Hosting research and recommendation (`docs/deployment.md`): Fly.io always-on at ~$2–3/mo.
+  Free tiers rejected because they sleep or lack persistent disk.
+- `Dockerfile`, `fly.toml`, and an opt-in deploy workflow (inert until `DEPLOY_ENABLED` and
+  `FLY_API_TOKEN` are set). CI builds and smoke-tests the image.
+- `SPARROW_CONFIG_TOML` loads the private profile from a secret. Proxy-aware Secure cookie.
+
 ### Milestone 4: Prediction validation
 - Collector logs prediction changes, poll freshness, and GPS vehicle positions to SQLite
   (`data/`, gitignored). Runs in-app (`SPARROW_COLLECT=1`) or via `scripts/collect.py`.
