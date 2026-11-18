@@ -257,3 +257,51 @@ def test_access_token(upstream, monkeypatch):
         r = c.get("/?key=s3cret")
         assert r.status_code == 200 and "sparrow_token" in r.headers["set-cookie"]
         assert c.get("/api/v1/commute/work").status_code == 200  # cookie now set
+
+
+# --- device payload ------------------------------------------------------------------------
+
+
+def test_device_payload_matches_web_and_is_small(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        web = c.get("/api/v1/commute/work").json()
+        raw = c.get("/api/v1/device").content
+    d = json.loads(raw)
+    assert len(raw) < 700, len(raw)
+    assert d["now"] == web["now"] and d["st"] == "live" and d["age"] == 25
+    assert d["rec"] == {
+        "r": "40", "a": "leave_in", "l": web["rec"]["leave_at"],
+        "b": web["rec"]["arrives_at"], "w": 240, "k": "l", "x": False,
+        "why": "Route 40 preferred",
+    }
+    assert [r["r"] for r in d["rows"]] == ["40", "42"]
+    assert [k for _, k in d["rows"][0]["t"]] == ["l", "e", "s"]
+    assert "sim" not in d and "msg" not in d
+    # buffer is recoverable on the device: b - l - w == 120 s
+    assert d["rec"]["b"] - d["rec"]["l"] - d["rec"]["w"] == 120
+
+
+def test_device_tight_carries_alternative(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        d = c.get("/api/v1/device?sim=tight").json()
+    assert d["sim"] is True and d["rec"]["a"] == "tight"
+    assert set(d["rec"]["alt"]) == {"r", "l", "b"}
+
+
+def test_device_no_service_has_message(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        d = c.get("/api/v1/device?sim=no_service").json()
+    assert "rec" not in d and d["msg"]
+
+
+def test_device_stale_and_offline_kinds(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        stale = c.get("/api/v1/device?sim=stale").json()
+        off = c.get("/api/v1/device?sim=offline").json()
+    assert stale["st"] == "stale" and stale["rec"]["k"] == "o" and stale["rec"]["x"] is True
+    assert off["st"] == "offline" and {k for r in off["rows"] for _, k in r["t"]} == {"s"}
+
+
+def test_device_unknown_mode_404(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        assert c.get("/api/v1/device?mode=nowhere").status_code == 404

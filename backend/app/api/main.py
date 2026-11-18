@@ -23,6 +23,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from app.api.device import DeviceOut, to_device
 from app.api.schemas import CommuteOut
 from app.config import REPO_ROOT, SparrowConfig, load_config
 from app.service import commute_status
@@ -139,6 +140,13 @@ def create_app(
             return simulate(sim, m, cfg.settings, now_utc())
         return await commute_status(app.state.client, m, cfg.settings, lambda: now_utc())
 
+    @app.get("/api/v1/device", response_model=DeviceOut, response_model_exclude_none=True)
+    async def device(
+        mode: str = Query(default="work"), sim: str | None = Query(default=None)
+    ) -> DeviceOut:
+        """Compact payload for the physical Sparrow. V1 shows the work commute only."""
+        return to_device(await commute(mode, sim))
+
     # --- prediction validation ---------------------------------------------------------
 
     @app.get("/api/v1/observe/options")
@@ -192,6 +200,10 @@ def create_app(
         @app.get("/", include_in_schema=False)
         def index() -> FileResponse:
             return FileResponse(FRONTEND / "index.html")
+
+        @app.get("/device", include_in_schema=False)
+        def device_preview() -> FileResponse:
+            return FileResponse(FRONTEND / "device.html")
 
         @app.get("/observe", include_in_schema=False)
         def observe_page() -> FileResponse:

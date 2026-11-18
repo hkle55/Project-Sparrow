@@ -4,6 +4,12 @@ All notable changes, grouped by milestone. Dates are in America/New_York.
 
 ## Unreleased
 
+### V1 device API (work commute only)
+- `GET /api/v1/device`: ~330-byte payload for the ESP32, derived from the same pipeline as
+  the web app (short keys; the device recomputes countdown and catch state locally).
+- `/device`: pixel-accurate 240×135 preview of the physical screen.
+- Project docs record the V1 scope: work commute only, no mode toggle on the device.
+
 ### Milestone 5 prep: Deployment
 - Hosting research and recommendation (`docs/deployment.md`): Fly.io always-on at ~$2–3/mo.
   Free tiers rejected because they sleep or lack persistent disk.
