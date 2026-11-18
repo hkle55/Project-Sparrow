@@ -1,0 +1,64 @@
+{
+ "42": [
+  {
+   "StopName": "Walnut St & 10th St",
+   "Route": "42",
+   "trip_id": "963404",
+   "date": "5:24p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:24 pm",
+   "DirectionDesc": "Wycombe"
+  },
+  {
+   "StopName": "Walnut St & 10th St",
+   "Route": "42",
+   "trip_id": "963403",
+   "date": "5:34p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:34 pm",
+   "DirectionDesc": "61st-Pine"
+  },
+  {
+   "StopName": "Walnut St & 10th St",
+   "Route": "42",
+   "trip_id": "963406",
+   "date": "5:44p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:44 pm",
+   "DirectionDesc": "Wycombe"
+  },
+  {
+   "StopName": "Walnut St & 10th St",
+   "Route": "42",
+   "trip_id": "963402",
+   "date": "5:56p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:56 pm",
+   "DirectionDesc": "61st-Pine"
+  },
+  {
+   "StopName": "Walnut St & 10th St",
+   "Route": "42",
+   "trip_id": "963496",
+   "date": "6:06p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 06:06 pm",
+   "DirectionDesc": "Wycombe"
+  },
+  {
+   "StopName": "Walnut St & 10th St",
+   "Route": "42",
+   "trip_id": "963401",
+   "date": "6:17p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 06:17 pm",
+   "DirectionDesc": "61st-Pine"
+  }
+ ]
+}

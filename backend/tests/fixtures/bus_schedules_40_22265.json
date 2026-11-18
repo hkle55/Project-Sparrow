@@ -1,0 +1,64 @@
+{
+ "40": [
+  {
+   "StopName": "Lombard St & 10th St",
+   "Route": "40",
+   "trip_id": "964081",
+   "date": "5:24p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:24 pm",
+   "DirectionDesc": "Conshohocken-Monument"
+  },
+  {
+   "StopName": "Lombard St & 10th St",
+   "Route": "40",
+   "trip_id": "964118",
+   "date": "5:35p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:35 pm",
+   "DirectionDesc": "Conshohocken-Monument"
+  },
+  {
+   "StopName": "Lombard St & 10th St",
+   "Route": "40",
+   "trip_id": "964075",
+   "date": "5:45p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:45 pm",
+   "DirectionDesc": "50th-Parkside"
+  },
+  {
+   "StopName": "Lombard St & 10th St",
+   "Route": "40",
+   "trip_id": "964055",
+   "date": "5:55p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 05:55 pm",
+   "DirectionDesc": "Conshohocken-Monument"
+  },
+  {
+   "StopName": "Lombard St & 10th St",
+   "Route": "40",
+   "trip_id": "964080",
+   "date": "6:05p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 06:05 pm",
+   "DirectionDesc": "50th-Parkside"
+  },
+  {
+   "StopName": "Lombard St & 10th St",
+   "Route": "40",
+   "trip_id": "964079",
+   "date": "6:15p",
+   "day": "Wed",
+   "Direction": "1",
+   "DateCalender": "11/18/26 06:15 pm",
+   "DirectionDesc": "Conshohocken-Monument"
+  }
+ ]
+}
