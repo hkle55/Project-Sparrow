@@ -24,7 +24,11 @@ What works today:
 - Route 40 preference, with Route 42 when it boards more than 5 min sooner
 - Handles passed, canceled, and detoured buses, stale feeds, SEPTA outages, and lost connection
 - Work/home toggle. Home shows "not set up" until its stop is configured
-- Simulation mode with 8 labeled scenarios
+- TIGHT CONNECTION state when a bus is reachable only by cutting into the buffer and no
+  safe bus comes soon after
+- Simulation mode with labeled scenarios
+- Prediction validation: collector, `/observe` page for manual arrival taps, accuracy report
+  ([docs/validation.md](docs/validation.md))
 
 ## Architecture
 
@@ -99,7 +103,8 @@ then flagged `"simulated": true`. Also: `/api/v1/modes`, `/api/v1/scenarios`, `/
 
 ## Known limitations
 
-- Prediction accuracy is not yet measured (Milestone 4). The 2-min buffer is a guess.
+- Prediction accuracy is not measured yet. The tooling exists, but it needs continuous
+  collection (hosting) and manual observations. The 2-min buffer is still a guess.
 - Live predictions only cover trips that already have a bus assigned (roughly the next
   30 min). Later buses are scheduled times.
 - BusSchedules times are minute-resolution.

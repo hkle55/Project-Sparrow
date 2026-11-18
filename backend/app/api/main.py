@@ -1,44 +1,113 @@
-"""Sparrow HTTP API. Also serves the web device simulator from /frontend."""
+"""Sparrow HTTP API. Also serves the web device simulator from /frontend.
+
+Environment:
+- SPARROW_CONFIG / SPARROW_CONFIG_TOML: commute profile (see app/config.py)
+- SPARROW_DB: SQLite path for validation data (default data/sparrow.sqlite)
+- SPARROW_COLLECT=1: run the prediction collector in the background
+- SPARROW_ACCESS_TOKEN: if set, every route except /health needs the token, given as the
+  X-Sparrow-Token header, a ?key= query parameter (which also sets a cookie), or that cookie
+"""
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+import os
+import secrets
+from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from app.api.schemas import CommuteOut
-from app.config import SparrowConfig, load_config
+from app.config import REPO_ROOT, SparrowConfig, load_config
 from app.service import commute_status
 from app.simulation import SCENARIOS, simulate
 from app.transit.client import TransitClient
+from app.validation import store
+from app.validation.analysis import analyze
+from app.validation.collector import Collector
+from app.validation.report import render
 
 log = logging.getLogger("sparrow")
 FRONTEND = Path(__file__).resolve().parents[3] / "frontend"
+DEFAULT_DB = REPO_ROOT / "data" / "sparrow.sqlite"
+TOKEN_COOKIE = "sparrow_token"
 
 
 def now_utc() -> datetime:
     return datetime.now(UTC)
 
 
-def create_app(config: SparrowConfig | None = None, client: TransitClient | None = None) -> FastAPI:
+class ObservationIn(BaseModel):
+    route: str = Field(max_length=8)
+    stop_id: str = Field(max_length=16)
+    arrived_at: float | None = None  # epoch seconds; default: now
+    vehicle_id: str | None = Field(default=None, max_length=16)
+    note: str | None = Field(default=None, max_length=200)
+
+
+def create_app(
+    config: SparrowConfig | None = None,
+    client: TransitClient | None = None,
+    *,
+    db_path: str | Path | None = None,
+    collect: bool | None = None,
+    access_token: str | None = None,
+) -> FastAPI:
+    db_path = db_path or os.environ.get("SPARROW_DB") or DEFAULT_DB
+    collect = collect if collect is not None else os.environ.get("SPARROW_COLLECT") == "1"
+    token = access_token if access_token is not None else os.environ.get("SPARROW_ACCESS_TOKEN")
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         cfg = config or load_config()
         options = [o for m in cfg.modes.values() for o in m.options]
         app.state.config = cfg
+        app.state.options = options
         app.state.client = client or TransitClient(
             {o.route for o in options}, {o.stop_id for o in options}, cfg.settings.tz
         )
-        log.info("Sparrow loaded %d modes", len(cfg.modes))
+        app.state.db = store.connect(db_path)
+        task = None
+        if collect and options:
+            task = asyncio.create_task(
+                Collector(app.state.db, app.state.client, options).run()
+            )
+        log.info("Sparrow loaded %d modes (collector %s)", len(cfg.modes),
+                 "on" if task else "off")
         yield
+        if task:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+        app.state.db.close()
         await app.state.client.aclose()
 
     app = FastAPI(title="Sparrow", version="0.1.0", lifespan=lifespan)
+
+    if token:
+        @app.middleware("http")
+        async def require_token(request: Request, call_next):
+            if request.url.path == "/health":
+                return await call_next(request)
+            given = (
+                request.headers.get("x-sparrow-token")
+                or request.query_params.get("key")
+                or request.cookies.get(TOKEN_COOKIE)
+                or ""
+            )
+            if not secrets.compare_digest(given.encode(), token.encode()):
+                return JSONResponse({"detail": "access token required"}, status_code=401)
+            response = await call_next(request)
+            if request.query_params.get("key"):
+                response.set_cookie(TOKEN_COOKIE, token, max_age=365 * 86400, httponly=True,
+                                    secure=request.url.scheme == "https", samesite="lax")
+            return response
 
     @app.get("/health")
     def health() -> dict:
@@ -68,10 +137,63 @@ def create_app(config: SparrowConfig | None = None, client: TransitClient | None
             return simulate(sim, m, cfg.settings, now_utc())
         return await commute_status(app.state.client, m, cfg.settings, lambda: now_utc())
 
+    # --- prediction validation ---------------------------------------------------------
+
+    @app.get("/api/v1/observe/options")
+    def observe_options() -> list[dict]:
+        cfg: SparrowConfig = app.state.config
+        return [
+            {"mode": m.key, "label": m.label, "route": o.route, "stop_id": o.stop_id,
+             "stop_name": o.stop_name}
+            for m in cfg.modes.values() for o in m.options
+        ]
+
+    @app.post("/api/v1/observations", status_code=201)
+    def add_observation(ob: ObservationIn) -> dict:
+        known = {(o.route, o.stop_id) for o in app.state.options}
+        if (ob.route, ob.stop_id) not in known:
+            raise HTTPException(422, "route/stop is not in the commute profile")
+        now = now_utc().timestamp()
+        arrived = ob.arrived_at if ob.arrived_at is not None else now
+        if not (now - 86400 <= arrived <= now + 60):
+            raise HTTPException(422, "arrived_at must be within the last 24 hours")
+        oid = store.add_observation(
+            app.state.db, recorded_at=now, arrived_at=arrived, route=ob.route,
+            stop_id=ob.stop_id, vehicle_id=(ob.vehicle_id or "").strip() or None,
+            note=(ob.note or "").strip() or None,
+        )
+        return {"id": oid, "arrived_at": arrived}
+
+    @app.get("/api/v1/observations")
+    def list_observations(limit: int = Query(default=20, ge=1, le=200)) -> list[dict]:
+        rows = app.state.db.execute(
+            "SELECT id, arrived_at, route, stop_id, vehicle_id, note FROM observations"
+            " ORDER BY arrived_at DESC LIMIT ?", (limit,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    @app.delete("/api/v1/observations/{oid}", status_code=204)
+    def delete_observation(oid: int) -> None:
+        cur = app.state.db.execute("DELETE FROM observations WHERE id=?", (oid,))
+        app.state.db.commit()
+        if cur.rowcount == 0:
+            raise HTTPException(404, "no such observation")
+
+    @app.get("/api/v1/validation/report", response_class=PlainTextResponse)
+    def validation_report() -> str:
+        cfg: SparrowConfig = app.state.config
+        s = cfg.settings
+        a = analyze(app.state.db, s.safety_buffer_min * 60, s.stale_after_s)
+        return render(a, s.tz, now_utc())
+
     if FRONTEND.is_dir():
         @app.get("/", include_in_schema=False)
         def index() -> FileResponse:
             return FileResponse(FRONTEND / "index.html")
+
+        @app.get("/observe", include_in_schema=False)
+        def observe_page() -> FileResponse:
+            return FileResponse(FRONTEND / "observe.html")
 
         app.mount("/static", StaticFiles(directory=FRONTEND), name="static")
 

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Sparrow · Log arrival</title>
+  <style>
+    :root { --bg:#111; --ink:#fff; --dim:#8a8a8a; --panel:#1c1c1c; --ok:#4ade80; --warn:#ffd23f; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,sans-serif; }
+    main { max-width:420px; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+    h1 { font-size:18px; margin:0; letter-spacing:.06em; }
+    p { margin:0; color:var(--dim); font-size:14px; line-height:1.4; }
+    .opt { display:flex; flex-direction:column; gap:4px; }
+    button.tap { width:100%; padding:22px 12px; font-size:22px; font-weight:800; color:#000;
+      background:var(--ink); border:0; border-radius:14px; cursor:pointer; }
+    button.tap:active { transform:translateY(2px); }
+    .stop { font-size:13px; color:var(--dim); }
+    label { display:flex; gap:8px; align-items:center; font-size:15px; }
+    input, select { font:inherit; padding:8px; border-radius:8px; border:1px solid #444;
+      background:var(--panel); color:var(--ink); }
+    input[type=text] { flex:1; }
+    #status { min-height:1.4em; font-weight:700; }
+    #status.ok { color:var(--ok); } #status.warn { color:var(--warn); }
+    ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
+    li { display:flex; justify-content:space-between; align-items:center; background:var(--panel);
+      padding:8px 10px; border-radius:8px; font-size:14px; }
+    li button { background:none; border:1px solid #555; color:var(--dim); border-radius:6px;
+      padding:4px 8px; font:inherit; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>LOG A BUS ARRIVAL</h1>
+  <p>Tap the moment the bus pulls up to the stop: the doors opening, or it passing if it
+    doesn't stop. This is the independent ground truth that SEPTA's predictions get checked against.</p>
+
+  <label>Bus number (optional) <input type="text" id="vehicle" inputmode="numeric"
+    maxlength="8" placeholder="e.g. 3381"></label>
+  <label>It arrived
+    <select id="ago">
+      <option value="0">just now</option>
+      <option value="30">30 s ago</option>
+      <option value="60">1 min ago</option>
+      <option value="120">2 min ago</option>
+      <option value="300">5 min ago</option>
+    </select>
+  </label>
+
+  <div id="options"><p>Loading…</p></div>
+  <div id="status" aria-live="polite"></div>
+
+  <h1>RECENT</h1>
+  <ul id="recent"></ul>
+  <p><a href="/" style="color:var(--dim)">← back to Sparrow</a></p>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const QUEUE = "sparrow.observeQueue";
+const loadQueue = () => { try { return JSON.parse(localStorage.getItem(QUEUE) || "[]"); } catch { return []; } };
+const saveQueue = (q) => { try { localStorage.setItem(QUEUE, JSON.stringify(q)); } catch {} };
+const fmt = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+
+function status(text, cls) { $("status").textContent = text; $("status").className = cls || ""; }
+
+async function send(ob) {
+  const res = await fetch("/api/v1/observations", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ob),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+let flushing = null;
+function flush() {
+  // One flush at a time: overlapping flushes would upload the same queued item twice.
+  if (!flushing) {
+    flushing = (async () => {
+      let sent = 0;
+      for (const ob of loadQueue()) {
+        try {
+          await send(ob);
+          sent++;
+          saveQueue(loadQueue().filter((x) => x.arrived_at !== ob.arrived_at || x.route !== ob.route));
+        } catch { break; }
+      }
+      return sent;
+    })().finally(() => { flushing = null; });
+  }
+  return flushing;
+}
+
+async function record(opt) {
+  // Use the phone's clock at the moment of the tap, so a slow connection doesn't skew it.
+  const ob = {
+    route: opt.route, stop_id: opt.stop_id,
+    arrived_at: Date.now() / 1000 - Number($("ago").value),
+    vehicle_id: $("vehicle").value.trim() || null,
+  };
+  try {
+    await send(ob);
+    status(`Saved: Route ${opt.route} at ${fmt(ob.arrived_at)}`, "ok");
+    $("vehicle").value = ""; $("ago").value = "0";
+  } catch {
+    saveQueue([...loadQueue(), ob]);
+    status(`No connection. Saved on this phone, will upload later (${fmt(ob.arrived_at)})`, "warn");
+  }
+  refresh();
+}
+
+async function refresh() {
+  const sent = await flush();
+  if (sent) status(`Uploaded ${sent} saved observation(s)`, "ok");
+  try {
+    const rows = await (await fetch("/api/v1/observations?limit=10")).json();
+    const ul = $("recent"); ul.replaceChildren();
+    for (const r of rows) {
+      const li = document.createElement("li");
+      li.textContent = `Route ${r.route} · ${fmt(r.arrived_at)}${r.vehicle_id ? " · bus " + r.vehicle_id : ""}`;
+      const del = document.createElement("button");
+      del.textContent = "undo";
+      del.onclick = async () => { await fetch(`/api/v1/observations/${r.id}`, { method: "DELETE" }); refresh(); };
+      li.append(del); ul.append(li);
+    }
+    const pending = loadQueue().length;
+    if (pending) { const li = document.createElement("li"); li.textContent = `${pending} waiting to upload`; ul.prepend(li); }
+  } catch { /* offline: keep what's shown */ }
+}
+
+(async () => {
+  try {
+    const opts = await (await fetch("/api/v1/observe/options")).json();
+    const box = $("options"); box.replaceChildren();
+    for (const o of opts) {
+      const div = document.createElement("div"); div.className = "opt";
+      const b = document.createElement("button"); b.className = "tap";
+      b.textContent = `${o.route} ARRIVED`;
+      b.onclick = () => record(o);
+      const s = document.createElement("span"); s.className = "stop";
+      s.textContent = `${o.label} · ${o.stop_name}`;
+      div.append(b, s); box.append(div);
+    }
+    if (!opts.length) box.innerHTML = "<p>No stops configured.</p>";
+  } catch { $("options").innerHTML = "<p>Can't reach Sparrow.</p>"; }
+  refresh();
+  window.addEventListener("online", refresh);
+})();
+</script>
+</body>
+</html>

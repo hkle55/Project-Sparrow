@@ -45,7 +45,8 @@ def main() -> None:
     print(f"feed {feed['feed_version']} valid {feed['feed_start_date']}..{feed['feed_end_date']}")
     for d in rows(z, "directions.txt"):
         if d["route_id"] == args.route:
-            print(f"direction {d['direction_id']}: {d['direction']} -> {d['direction_destination']}")
+            dest = d["direction_destination"]
+            print(f"direction {d['direction_id']}: {d['direction']} -> {dest}")
     stops = {r["stop_id"]: r for r in rows(z, "stops.txt")}
     for r in rows(z, "route_stops.txt"):
         if r["route_id"] != args.route:
@@ -56,7 +57,8 @@ def main() -> None:
         if args.name.lower() in s.get("stop_name", "").lower():
             print(
                 f"dir {r['direction_id']} #{int(r['route_stop_sort_order']):3d}  "
-                f"stop_id {r['stop_id']:>6}  {s.get('stop_name')}  ({s.get('stop_lat')}, {s.get('stop_lon')})"
+                f"stop_id {r['stop_id']:>6}  {s.get('stop_name')}  "
+                f"({s.get('stop_lat')}, {s.get('stop_lon')})"
             )
 
 

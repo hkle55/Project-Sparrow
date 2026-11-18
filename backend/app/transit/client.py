@@ -16,8 +16,13 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from .gtfs_rt import TRIP_UPDATES_URL, parse_trip_updates
-from .models import ScheduledArrival, TransitDataError, TripUpdatesSnapshot
+from .gtfs_rt import (
+    TRIP_UPDATES_URL,
+    VEHICLE_POSITIONS_URL,
+    parse_trip_updates,
+    parse_vehicle_positions,
+)
+from .models import ScheduledArrival, TransitDataError, TripUpdatesSnapshot, VehicleSnapshot
 from .schedules import BUS_SCHEDULES_URL, parse_bus_schedules, schedule_params
 
 log = logging.getLogger(__name__)
@@ -123,6 +128,13 @@ class TransitClient:
             return parse_trip_updates(resp.content, self.routes, self.stop_ids)
 
         return await self._cached("trip_updates", self.tu_ttl, load)
+
+    async def vehicle_positions(self) -> Fetched:
+        async def load() -> VehicleSnapshot:
+            resp = await self._get(VEHICLE_POSITIONS_URL)
+            return parse_vehicle_positions(resp.content, self.routes)
+
+        return await self._cached("vehicle_positions", self.tu_ttl, load)
 
     async def schedule(self, stop_id: str, route: str, count: int = 8) -> Fetched:
         async def load() -> list[ScheduledArrival]:
