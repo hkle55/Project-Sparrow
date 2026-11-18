@@ -162,6 +162,7 @@ def test_every_scenario_is_marked_simulated(upstream, monkeypatch, name):
         ("missed_preferred", "42", "leave_in"),
         ("route_42", "42", "leave_in"),
         ("leave_now", "40", "leave_now"),
+        ("tight", "40", "tight"),
     ],
 )
 def test_scenario_outcomes(upstream, monkeypatch, name, route, action):
@@ -191,3 +192,10 @@ def test_modes_listed(upstream, monkeypatch):
 def test_payload_json_roundtrip(upstream, monkeypatch):
     with make_client(upstream, monkeypatch) as c:
         json.loads(c.get("/api/v1/commute/work").content)
+
+
+def test_tight_scenario_includes_safer_alternative(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        rec = c.get("/api/v1/commute/work?sim=tight").json()["rec"]
+    assert rec["action"] == "tight" and rec["leave_in_s"] == 0
+    assert rec["alt"]["route"] == "40" and rec["alt"]["action"] == "leave_in"  # 24m 40 beats 19m 42

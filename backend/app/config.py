@@ -52,6 +52,7 @@ class Settings:
     safety_buffer_min: float = 2.0
     preference_threshold_min: float = 5.0
     get_ready_window_min: float = 3.0
+    tight_max_wait_min: float = 10.0
     stale_after_s: int = 120
     discard_after_s: int = 600
     arrivals_per_route: int = 3

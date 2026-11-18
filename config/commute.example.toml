@@ -7,6 +7,7 @@ timezone = "America/New_York"
 safety_buffer_min = 2.0          # extra margin on top of walking time
 preference_threshold_min = 5.0   # take the preferred route if it boards within this many minutes of the alternative
 get_ready_window_min = 3.0       # show GET READY when the leave time is this close
+tight_max_wait_min = 10.0        # recommend a TIGHT bus only if the next safe bus is more than this much later
 stale_after_s = 120              # live data older than this is shown as STALE
 discard_after_s = 600            # live data older than this is not used at all
 arrivals_per_route = 3

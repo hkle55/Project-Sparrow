@@ -82,9 +82,50 @@ def test_catch_states():
     assert plan_arrival(c, 4, 2, NOW).catch == Catch.MISSED
 
 
-def test_tight_bus_not_recommended():
-    r = rec((5, 20))
-    assert r.plan.arrival.at == NOW + timedelta(minutes=20)
+def test_tight_bus_not_recommended_when_safe_bus_soon_after():
+    r = rec((5, 12))  # 5 is tight; 12 is safe and only 7 min later
+    assert r.action != Action.TIGHT
+    assert r.plan.arrival.at == NOW + timedelta(minutes=12)
+
+
+def test_tight_preferred_route_loses_to_safe_alternative():
+    # Seen live 2026-11-18: 40 reachable only by cutting the buffer, 42 safe 4.6 min later.
+    rs = [
+        RouteArrivals("40", 4, [arr("40", 4.8), arr("40", 17)]),
+        RouteArrivals("42", 7, [arr("42", 9.4)]),
+    ]
+    r, _ = recommend(rs, "40", SET, NOW)
+    assert r.route == "42" and r.action != Action.TIGHT
+
+
+def test_tight_recommended_when_next_safe_bus_is_much_later():
+    r = rec((5, 20))  # safe bus 15 min after the tight one (> 10 min)
+    assert r.action == Action.TIGHT and r.route == "40"
+    assert r.leave_in_s == 0
+    assert r.alternative is not None
+    assert r.alternative.plan.arrival.at == NOW + timedelta(minutes=20)
+    assert "safer bus is 15 min later" in r.reason
+
+
+def test_tight_recommended_when_no_safe_bus_at_all():
+    r = rec((5.5,))
+    assert r.action == Action.TIGHT and r.alternative is None
+    assert "1 min to spare" in r.reason  # 5.5 - 4 walk = 1.5 min margin
+
+
+def test_tight_window_is_configurable():
+    assert rec((5, 12), settings=Settings(tight_max_wait_min=5)).action == Action.TIGHT
+    assert rec((5, 20), settings=Settings(tight_max_wait_min=20)).action != Action.TIGHT
+
+
+def test_tight_picks_largest_margin():
+    r = rec((4.5, 5.8), (8.5,))  # 40 margins 0.5 / 1.8 min; 42 margin 1.5 min
+    assert r.action == Action.TIGHT
+    assert r.plan.arrival.at == NOW + timedelta(minutes=5.8)
+
+
+def test_missed_bus_never_becomes_tight():
+    assert rec((3.9,)) is None
 
 
 def test_early_bus_changes_recommendation():
@@ -102,10 +143,10 @@ def test_missed_bus_falls_to_next():
 
 def test_passing_time_moves_recommendation_forward():
     # Same predictions, later "now": the first bus becomes uncatchable.
-    r1 = rec((10, 22), now=NOW)
-    r2 = rec((10, 22), now=NOW + timedelta(minutes=4, seconds=30))
+    r1 = rec((10, 18), now=NOW)
+    r2 = rec((10, 18), now=NOW + timedelta(minutes=4, seconds=30))
     assert r1.plan.arrival.at == NOW + timedelta(minutes=10)
-    assert r2.plan.arrival.at == NOW + timedelta(minutes=22)
+    assert r2.plan.arrival.at == NOW + timedelta(minutes=18)
 
 
 def test_buses_bunched_together():
@@ -145,7 +186,7 @@ def test_no_arrivals_no_recommendation():
 
 
 def test_nothing_catchable_no_recommendation():
-    assert rec((2,), (5,)) is None
+    assert rec((2,), (5,)) is None  # 40 needs 4 min walk, 42 needs 7
 
 
 def test_only_alternative_route_available():
