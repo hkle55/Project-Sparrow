@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+data
+docs
+scripts
+backend/tests
+config/*.local.toml
+.env
+.env.*

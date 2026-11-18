@@ -1,6 +1,7 @@
 """Commute profile loading.
 
-The profile is a TOML file. The real one (with the actual commute stops) lives in
+The profile is TOML. For hosting, put the whole file's contents in the secret
+``$SPARROW_CONFIG_TOML``. Locally, the real one (with the actual commute stops) lives in
 ``config/commute.local.toml`` or wherever ``$SPARROW_CONFIG`` points. It is gitignored
 because the repository is public. ``config/commute.example.toml`` is the committed
 fallback.
@@ -8,6 +9,7 @@ fallback.
 
 from __future__ import annotations
 
+import json
 import os
 import tomllib
 from dataclasses import dataclass, field
@@ -126,6 +128,23 @@ def config_path() -> Path:
 
 
 def load_config(path: Path | None = None) -> SparrowConfig:
+    """Load the profile from `path`, else from the *contents* in $SPARROW_CONFIG_TOML or
+    $SPARROW_CONFIG_JSON (single-line form, for hosts and cloud environments that only allow
+    one-line variables), else $SPARROW_CONFIG / local / example file."""
+    if path is None and (inline := os.environ.get("SPARROW_CONFIG_JSON")):
+        try:
+            data = json.loads(inline)
+        except ValueError as exc:
+            raise ConfigError(f"SPARROW_CONFIG_JSON is not valid JSON: {exc}") from exc
+        if not isinstance(data, dict):
+            raise ConfigError("SPARROW_CONFIG_JSON must be a JSON object")
+        return parse_config(data, source="$SPARROW_CONFIG_JSON")
+    if path is None and (inline := os.environ.get("SPARROW_CONFIG_TOML")):
+        try:
+            data = tomllib.loads(inline)
+        except tomllib.TOMLDecodeError as exc:
+            raise ConfigError(f"SPARROW_CONFIG_TOML is not valid TOML: {exc}") from exc
+        return parse_config(data, source="$SPARROW_CONFIG_TOML")
     path = path or config_path()
     with open(path, "rb") as fh:
         return parse_config(tomllib.load(fh), source=str(path))

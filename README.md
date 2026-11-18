@@ -109,7 +109,8 @@ then flagged `"simulated": true`. Also: `/api/v1/modes`, `/api/v1/scenarios`, `/
   30 min). Later buses are scheduled times.
 - BusSchedules times are minute-resolution.
 - Route choice compares boarding times, not door-to-door time.
-- No hosting or auth yet. Local only.
+- Not deployed yet. Hosting is prepared and awaiting approval
+  ([docs/deployment.md](docs/deployment.md)). An optional access token is supported.
 
 ## Roadmap
 
