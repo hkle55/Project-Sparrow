@@ -68,10 +68,10 @@ function heroFor(data, disconnected, now) {
   let action, cls;
   const route = data.routes.find((r) => r.route === rec.route);
   const walkS = route ? route.walk_min * 60 : 0;
-  if (left < 0) {
-    // Leave time passed since the last poll. Still reachable on foot? Then hurry;
-    // otherwise wait for the next poll to pick another bus.
-    if (untilBus >= walkS) { action = "LEAVE NOW"; cls = "leave_now"; }
+  if (rec.action === "tight" || left < 0) {
+    // TIGHT from the server, or the leave time passed since the last poll. Still reachable
+    // on foot? Then it's a tight connection; otherwise wait for the next poll to re-plan.
+    if (untilBus >= walkS) { action = "TIGHT · GO NOW"; cls = "tight"; }
     else { action = "CHECKING…"; cls = "none"; }
   } else if (left < LEAVE_NOW_S) {
     action = "LEAVE NOW"; cls = "leave_now";
@@ -83,7 +83,17 @@ function heroFor(data, disconnected, now) {
   let reason = rec.reason;
   if (rec.approx) reason = `${kindWord(rec.kind)} time, not live · ${reason}`;
   if (disconnected) reason = `Offline: countdown may be wrong · ${reason}`;
-  return { route: `BUS ${rec.route}`, action, cls: cls + (rec.approx || disconnected ? " approx" : ""), reason };
+  let alt = "";
+  if (rec.alt) {
+    const altLeft = rec.alt.leave_at - now;
+    alt = altLeft >= 0
+      ? `Safer: BUS ${rec.alt.route} · leave in ${mins(altLeft)}m`
+      : `Safer: BUS ${rec.alt.route}`;
+  }
+  return {
+    route: `BUS ${rec.route}`, action, reason, alt,
+    cls: cls + (rec.approx || disconnected ? " approx" : ""),
+  };
 }
 
 function kindWord(kind) {
@@ -153,6 +163,8 @@ function render() {
   $("route").textContent = hero.route || " ";
   $("action").textContent = hero.action;
   $("reason").textContent = hero.reason || " ";
+  $("alt").textContent = hero.alt || "";
+  $("alt").hidden = !hero.alt;
   $("hero").className = `hero ${hero.cls}`;
 
   renderRows(data, now);
