@@ -12,10 +12,13 @@ Start every session by reading `docs/handoff.md`, then `PROJECT_PLAN.md`.
 - `backend/app/transit/`: SEPTA adapters (GTFS-RT trip updates, BusSchedules JSON) and the cached fetcher
 - `backend/app/predictions/`: merges live and scheduled data into classified arrivals
 - `backend/app/recommendations/`: pure, deterministic departure and route-choice engine
-- `backend/app/api/`: FastAPI app (`/health`, `/api/v1/commute/{mode}`), serves `frontend/`
+- `backend/app/api/`: FastAPI app (`/health`, `/api/v1/commute/{mode}`, observations, report), serves `frontend/`
+- `backend/app/validation/`: prediction logging (SQLite), GPS-inferred arrivals, accuracy analysis and report
 - `backend/app/config.py`: loads the TOML commute profile
 - `frontend/`: plain HTML/CSS/JS device simulator (no framework, no build step)
-- `config/commute.example.toml`: public example profile; the real one is `config/commute.local.toml` (gitignored)
+- `config/commute.example.toml`: public example profile. The real one comes from `$SPARROW_CONFIG_JSON`
+  (set on the `project-sparrow` cloud environment), `$SPARROW_CONFIG_TOML`, or `config/commute.local.toml` (gitignored)
+- `Dockerfile`, `fly.toml`, `.github/workflows/deploy.yml`: hosting (not deployed; see docs/deployment.md)
 - `scripts/`: CLI tools (`next_arrivals.py`, `find_stops.py`)
 - `docs/`: `transit-research.md`, `architecture.md`, `handoff.md`
 
@@ -28,7 +31,13 @@ python -m venv ../.venv && ../.venv/bin/pip install -r requirements-dev.txt
 ../.venv/bin/ruff check .
 ../.venv/bin/uvicorn app.api.main:app --reload   # http://127.0.0.1:8000
 ../.venv/bin/python ../scripts/next_arrivals.py   # terminal view of next buses
+SPARROW_COLLECT=1 ../.venv/bin/uvicorn app.api.main:app   # also logs predictions to data/
+../.venv/bin/python ../scripts/validation_report.py
 ```
+
+The `project-sparrow` cloud environment's setup script creates `.venv` with all dev
+dependencies, and sets `SPARROW_CONFIG_JSON` to the real profile. Nothing needs installing
+by hand in a fresh session.
 
 ## Conventions
 
@@ -53,11 +62,12 @@ python -m venv ../.venv && ../.venv/bin/pip install -r requirements-dev.txt
 ## Privacy (the repo is public)
 
 - Never commit the real commute stops, addresses, workplace, Wi-Fi credentials,
-  observation logs, or `.env`. The real profile is `config/commute.local.toml` or
-  `$SPARROW_CONFIG`.
+  observation logs (`data/`), or `.env`. The real profile comes from env vars or the gitignored local file.
+- Hosted deployments must set `SPARROW_ACCESS_TOKEN`.
 - Committed examples use generic downtown stops (Lombard & 10th, Walnut & 10th).
 
 ## Needs owner approval
 
-Spending money, buying hardware, paid hosting, changing repo visibility, publishing
-personal info, destructive git operations.
+Spending money, buying hardware, paid hosting (the Fly.io deploy is prepared but NOT
+approved), changing repo visibility (decided: stays public), publishing personal info,
+destructive git operations. No hardware work until the owner says so.
