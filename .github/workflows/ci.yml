@@ -23,3 +23,23 @@ jobs:
         run: ruff check . ../scripts
       - name: Unit tests (no network)
         run: pytest -q
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t sparrow:ci .
+      - name: Smoke test container (simulation only; no SEPTA dependency)
+        run: |
+          docker run -d --name sparrow -p 8080:8080 -e SPARROW_COLLECT=0 \
+            -e SPARROW_ACCESS_TOKEN=ci-token sparrow:ci
+          for i in $(seq 1 30); do curl -sf localhost:8080/health && break; sleep 1; done
+          curl -sf localhost:8080/health
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/api/v1/modes)" = 401
+          curl -sf -H 'X-Sparrow-Token: ci-token' \
+            'localhost:8080/api/v1/commute/work?sim=normal' | grep -q '"simulated":true'
+          curl -sf -H 'X-Sparrow-Token: ci-token' localhost:8080/ | grep -q '<title>Sparrow'
+      - name: Container logs
+        if: always()
+        run: docker logs sparrow || true
