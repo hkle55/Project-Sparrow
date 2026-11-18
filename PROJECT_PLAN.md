@@ -2,17 +2,17 @@
 
 ## Current milestone
 
-**Milestone 0: Project initialization**, then M1–M3 in sequence.
+**Milestone 4: Prediction validation** (M0–M3 done).
 
 ## Milestones
 
 | # | Milestone | Status |
 |---|---|---|
-| 0 | Project initialization | In progress |
-| 1 | SEPTA research and data retrieval | Research done; adapter next |
-| 2 | Prediction and recommendation engine and API | Not started |
-| 3 | Web device simulator | Not started |
-| 4 | Prediction validation (observation logging and report) | Not started |
+| 0 | Project initialization | Done |
+| 1 | SEPTA research and data retrieval | Done |
+| 2 | Prediction and recommendation engine and API | Done |
+| 3 | Web device simulator | Done (local) |
+| 4 | Prediction validation (observation logging and report) | Next |
 | 5 | Remote deployment (research and recommendation, no paid infra without approval) | Not started |
 | 6 | Hardware research and BOM (no purchases without approval) | Not started |
 | 7 | ESP32 firmware | Not started |
@@ -33,7 +33,9 @@
 
 ## Blockers
 
-- None for M0–M3.
+- None for M4.
+- Simulator acceptance item "works on mobile" is verified only in emulation. Real-phone
+  use needs hosting (M5).
 - Return-commute (home mode) details are unknown: boarding stop, walking time,
   destination. Home mode shows "not configured" until the product owner provides them.
 
