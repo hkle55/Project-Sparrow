@@ -30,6 +30,21 @@ def test_inline_toml_env_var_wins(monkeypatch):
     assert cfg.source == "$SPARROW_CONFIG_TOML" and cfg.modes["work"].label == "Inline"
 
 
+def test_inline_json_env_var(monkeypatch):
+    monkeypatch.setenv("SPARROW_CONFIG_JSON", '{"modes": {"work": {"label": "J", "options": ['
+                       '{"route": "40", "direction_id": 1, "stop_id": "9", "walk_min": 3}]}}}')
+    cfg = load_config()
+    assert cfg.source == "$SPARROW_CONFIG_JSON"
+    assert cfg.modes["work"].options[0].stop_id == "9"
+
+
+@pytest.mark.parametrize("bad", ["{nope", "[1, 2]"])
+def test_inline_json_invalid(monkeypatch, bad):
+    monkeypatch.setenv("SPARROW_CONFIG_JSON", bad)
+    with pytest.raises(ConfigError):
+        load_config()
+
+
 def test_inline_toml_invalid(monkeypatch):
     monkeypatch.setenv("SPARROW_CONFIG_TOML", "this is = = not toml")
     with pytest.raises(ConfigError):

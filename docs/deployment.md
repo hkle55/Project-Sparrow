@@ -70,7 +70,8 @@ runner-up.
   variable `DEPLOY_ENABLED=true` and the secret `FLY_API_TOKEN` exist.
 - CI `docker` job: builds the image and smoke-tests it on every push.
 - App support:
-  - `SPARROW_CONFIG_TOML` (the profile contents, as a secret)
+  - `SPARROW_CONFIG_TOML` (the profile contents, as a secret), or `SPARROW_CONFIG_JSON` for
+    hosts that only allow single-line values
   - `SPARROW_ACCESS_TOKEN` (required on every route except `/health`)
   - Forwarded-proto handling, so the token cookie is `Secure`
 
