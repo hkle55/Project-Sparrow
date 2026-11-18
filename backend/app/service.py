@@ -6,7 +6,14 @@ import math
 from collections.abc import Callable
 from datetime import datetime
 
-from app.api.schemas import ArrivalOut, CommuteOut, DataInfo, RecommendationOut, RouteOut
+from app.api.schemas import (
+    AlternativeOut,
+    ArrivalOut,
+    CommuteOut,
+    DataInfo,
+    RecommendationOut,
+    RouteOut,
+)
 from app.config import CommuteMode, Settings
 from app.predictions.arrivals import Arrival, build_arrivals, usable_snapshot
 from app.recommendations.engine import Plan, Recommendation, RouteArrivals, recommend
@@ -56,6 +63,18 @@ def _rec_out(r: Recommendation, settings: Settings) -> RecommendationOut:
         approx=r.approximate,
         reason=r.reason,
         ready_s=math.floor(settings.get_ready_window_min * 60),
+        alt=(
+            AlternativeOut(
+                route=r.alternative.route,
+                action=r.alternative.action.value,
+                leave_at=_epoch(r.alternative.plan.leave_at),
+                leave_in_s=r.alternative.leave_in_s,
+                arrives_at=_epoch(r.alternative.plan.arrival.at),
+                kind=r.alternative.plan.arrival.kind.value,
+            )
+            if r.alternative
+            else None
+        ),
     )
 
 

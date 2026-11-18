@@ -40,9 +40,20 @@ class RouteOut(BaseModel):
     arrivals: list[ArrivalOut]
 
 
-class RecommendationOut(BaseModel):
+class AlternativeOut(BaseModel):
+    """The safer bus, shown alongside a TIGHT recommendation."""
+
     route: str
     action: Literal["leave_in", "get_ready", "leave_now"]
+    leave_at: int
+    leave_in_s: int
+    arrives_at: int
+    kind: Literal["live", "estimated", "scheduled", "stale"]
+
+
+class RecommendationOut(BaseModel):
+    route: str
+    action: Literal["leave_in", "get_ready", "leave_now", "tight"]
     leave_at: int
     leave_in_s: int
     arrives_at: int
@@ -50,6 +61,7 @@ class RecommendationOut(BaseModel):
     approx: bool  # true unless based on a fresh live prediction
     reason: str
     ready_s: int  # client shows GET READY when leave_in_s drops below this (LEAVE NOW < 60)
+    alt: AlternativeOut | None = None  # safer bus when action == "tight"
 
 
 class CommuteOut(BaseModel):

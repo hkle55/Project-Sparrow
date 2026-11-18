@@ -52,6 +52,10 @@ SCENARIOS: dict[str, tuple[str, Scenario]] = {
         "Route 42 much sooner",
         lambda now: (_routes(now, r40=(27, 41, 55), r42=(13, 27, 41)), LIVE),
     ),
+    "tight": (
+        "Tight connection: next safe bus is much later",
+        lambda now: (_routes(now, r40=(5, 24, 38), r42=(19, 33)), LIVE),
+    ),
     "leave_now": ("Leave now", lambda now: (_routes(now, r40=(6.5, 20, 34), r42=(18, 32)), LIVE)),
     "stale": (
         "Live data is old",
