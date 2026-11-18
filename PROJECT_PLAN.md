@@ -53,8 +53,9 @@
 
 1. Route comparison basis. Today: boarding time with a 5-minute preference for Route 40.
    Later: total door-to-door time, once destination stops and walk times are known.
-2. "Tight" buses: a bus that can only be reached by eating into the safety buffer is
-   shown as TIGHT but not recommended. Confirm this matches how she actually commutes.
+2. ~~Tight buses~~ Decided 2026-11-18: TIGHT CONNECTION state, recommended only when no
+   safe bus boards within 10 min after it.
 3. Hosting choice (M5) and whether the web app needs a login, or just an unguessable
    URL or token.
-4. The repo is public: should it go private? The real stops are kept out of git either way.
+4. ~~Repo visibility~~ Decided 2026-11-18: stays public. Personal config and observation
+   logs stay out of git.

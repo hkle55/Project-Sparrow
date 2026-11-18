@@ -45,9 +45,11 @@
 - **No static GTFS at runtime.** The 25 MB zip is published ahead of its validity window.
   BusSchedules gives today's timetable with matching trip IDs. Static GTFS is only used
   offline (`scripts/find_stops.py`).
-- **Tight buses are shown but not recommended.** The safety buffer exists because buses
-  run early. Recommending a bus that eats into it defeats the purpose. (Open product
-  question in PROJECT_PLAN.)
+- **TIGHT CONNECTION.** A bus reachable on foot but only by cutting into the buffer is
+  `tight`. It's recommended (action `tight`, "TIGHT · GO NOW") only when no safe bus boards
+  within `tight_max_wait_min` (10) after it. The safe option is attached as `alt`. A tight
+  bus never beats a reasonably soon safe bus, even on the preferred route (product decision
+  2026-11-18).
 - **Floors everywhere.** "Leave in 5m" means at least 5 full minutes. Rounding up could
   cause exactly the missed bus Sparrow exists to prevent.
 - **Pure engine.** `now` is injected, so the scenario tests are deterministic, including

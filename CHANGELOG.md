@@ -4,6 +4,10 @@ All notable changes, grouped by milestone. Dates are in America/New_York.
 
 ## Unreleased
 
+### TIGHT CONNECTION state
+- Buses reachable only by cutting into the safety buffer are recommended as TIGHT (with the
+  safer bus shown) only when no safe bus boards within `tight_max_wait_min` (10) after them.
+
 ### Milestone 3: Web device simulator
 - Static HTML/CSS/JS simulator served at `/`: big route and countdown, 3 arrivals per
   route, live/stale/scheduled badges, freshness, and a NO CONNECTION state.
