@@ -45,15 +45,18 @@ async def main(mode_key: str) -> int:
                 print(f"!! schedule unavailable for {opt.route}: {sched.error}")
             arrivals = build_arrivals(opt, now, tu.value, sched.value, cfg.settings)
             n = cfg.settings.arrivals_per_route
-            print(f"\nRoute {opt.route} (dir {opt.direction_id}) at {opt.stop_name} [{opt.stop_id}]")
+            print(
+                f"\nRoute {opt.route} (dir {opt.direction_id}) "
+                f"at {opt.stop_name} [{opt.stop_id}]"
+            )
             if not arrivals:
                 print("  no upcoming arrivals available")
             for a in arrivals[:n]:
                 mins = (a.at - now).total_seconds() / 60
                 local = a.at.astimezone(tz).strftime("%I:%M:%S %p")
-                sched_s = (
-                    f" sched {a.scheduled.astimezone(tz).strftime('%I:%M %p')}" if a.scheduled else ""
-                )
+                sched_s = ""
+                if a.scheduled:
+                    sched_s = f" sched {a.scheduled.astimezone(tz).strftime('%I:%M %p')}"
                 print(
                     f"  {mins:5.1f} min  {local}  {a.kind.value.upper():9s} "
                     f"trip {a.trip_id} veh {a.vehicle_id or '-'}{sched_s}  {a.headsign or ''}"
