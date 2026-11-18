@@ -1,8 +1,23 @@
 # Sparrow Project Plan
 
+## V1 scope (owner decision 2026-11-18)
+
+**V1 = a physical Sparrow for the morning commute to work, only.**
+
+- Route 40 at Lombard & 21st (preferred, 4-min walk) and Route 42 at Walnut & 21st (7-min
+  walk). Next three arrivals for each.
+- Keep the existing recommendation engine, 2-min safety buffer, and tight-connection logic.
+- Prioritize instant access to the countdown.
+- No work/home toggle on the device. The backend keeps home-mode support for later.
+- The return commute is **out of scope** and is not a blocker.
+- The device only needs her home Wi-Fi. Workplace Wi-Fi is not a V1 requirement.
+- Workstreams in parallel: deployment, prediction collection, hardware selection,
+  firmware preparation.
+
 ## Current milestone
 
-**Milestone 4: Prediction validation**: tooling done, data collection needs hosting (M5).
+**Parallel:** M5 deploy (awaiting spend approval), M4 data collection (starts at deploy),
+M6 hardware selection (recommendation ready), M7 firmware preparation.
 
 ## Milestones
 
@@ -14,8 +29,8 @@
 | 3 | Web device simulator | Done (local) |
 | 4 | Prediction validation (observation logging and report) | Tooling done; collecting data |
 | 5 | Remote deployment (research and recommendation, no paid infra without approval) | Prepared; awaiting approval to spend ~$2–3/mo |
-| 6 | Hardware research and BOM (no purchases without approval) | Not started |
-| 7 | ESP32 firmware | Not started |
+| 6 | Hardware research and BOM (no purchases without approval) | In progress |
+| 7 | ESP32 firmware | Preparing (device API + firmware core) |
 | 8 | Battery and physical product | Not started |
 
 ## Acceptance criteria (abridged; full text in the master spec)
@@ -36,8 +51,6 @@
 - None for M4.
 - Simulator acceptance item "works on mobile" is verified only in emulation. Real-phone
   use needs hosting (M5).
-- Return-commute (home mode) details are unknown: boarding stop, walking time,
-  destination. Home mode shows "not configured" until the product owner provides them.
 
 ## Unresolved technical questions
 

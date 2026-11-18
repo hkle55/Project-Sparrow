@@ -7,15 +7,21 @@ features**: never present scheduled, estimated, stale, or simulated data as live
 
 Start every session by reading `docs/handoff.md`, then `PROJECT_PLAN.md`.
 
+**V1 scope:** a physical device for the work commute only (Route 40 at Lombard & 21st,
+Route 42 at Walnut & 21st). There's no mode toggle on the device, and the return commute
+is out of scope and not a blocker. Keep backend home-mode support for later.
+
 ## Layout
 
 - `backend/app/transit/`: SEPTA adapters (GTFS-RT trip updates, BusSchedules JSON) and the cached fetcher
 - `backend/app/predictions/`: merges live and scheduled data into classified arrivals
 - `backend/app/recommendations/`: pure, deterministic departure and route-choice engine
-- `backend/app/api/`: FastAPI app (`/health`, `/api/v1/commute/{mode}`, observations, report), serves `frontend/`
+- `backend/app/api/`: FastAPI app (`/health`, `/api/v1/commute/{mode}`, compact `/api/v1/device`,
+  observations, report), serves `frontend/`
 - `backend/app/validation/`: prediction logging (SQLite), GPS-inferred arrivals, accuracy analysis and report
 - `backend/app/config.py`: loads the TOML commute profile
-- `frontend/`: plain HTML/CSS/JS device simulator (no framework, no build step)
+- `frontend/`: plain HTML/CSS/JS. `index.html` is the web simulator, `device.html` is a pixel preview
+  of the physical screen (from `/api/v1/device`), and `observe.html` is manual arrival logging
 - `config/commute.example.toml`: public example profile. The real one comes from `$SPARROW_CONFIG_JSON`
   (set on the `project-sparrow` cloud environment), `$SPARROW_CONFIG_TOML`, or `config/commute.local.toml` (gitignored)
 - `Dockerfile`, `fly.toml`, `.github/workflows/deploy.yml`: hosting (not deployed; see docs/deployment.md)
