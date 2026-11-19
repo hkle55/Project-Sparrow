@@ -305,3 +305,14 @@ def test_device_stale_and_offline_kinds(upstream, monkeypatch):
 def test_device_unknown_mode_404(upstream, monkeypatch):
     with make_client(upstream, monkeypatch) as c:
         assert c.get("/api/v1/device?mode=nowhere").status_code == 404
+
+
+def test_frontend_files_are_revalidated_but_api_is_not_affected(upstream, monkeypatch):
+    with make_client(upstream, monkeypatch) as c:
+        for path in ("/", "/device", "/observe", "/static/app.js", "/static/style.css"):
+            r = c.get(path)
+            assert r.status_code == 200, path
+            assert r.headers.get("cache-control") == "no-cache", path
+        assert "cache-control" not in c.get("/health").headers
+        etag = c.get("/static/app.js").headers["etag"]
+        assert c.get("/static/app.js", headers={"If-None-Match": etag}).status_code == 304
