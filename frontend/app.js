@@ -14,6 +14,7 @@ const store = {
 
 const state = {
   mode: store.get("sparrow.mode", "work"),
+  clockView: store.get("sparrow.view", "countdown") === "clock",  // show ET clock times
   sim: "",
   netDown: false,
   data: null,          // last successful response
@@ -25,7 +26,15 @@ const state = {
 
 const clientNow = () => Date.now() / 1000;
 const serverNow = () => clientNow() + state.skew;
-const mins = (s) => Math.floor(s / 60);   // always floor: never overstate time left
+const mins = (s) => Math.floor(s / 60);
+
+// Eastern time, whatever timezone the viewer's phone is in. Uses the server-corrected clock.
+const ET = "America/New_York";
+const etTime = new Intl.DateTimeFormat("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" });
+const etClock = new Intl.DateTimeFormat("en-US", {
+  timeZone: ET, hour: "numeric", minute: "2-digit", second: "2-digit", timeZoneName: "short",
+});
+const hm = (epoch) => etTime.format(new Date(epoch * 1000));   // always floor: never overstate time left
 
 const viewKey = () => `${state.mode}|${state.sim}`;
 
@@ -76,9 +85,11 @@ function heroFor(data, disconnected, now) {
   } else if (left < LEAVE_NOW_S) {
     action = "LEAVE NOW"; cls = "leave_now";
   } else if (left < rec.ready_s) {
-    action = `GET READY ${mins(left)}m`; cls = "get_ready";
+    action = state.clockView ? `GET READY · LEAVE ${hm(rec.leave_at)}` : `GET READY ${mins(left)}m`;
+    cls = "get_ready";
   } else {
-    action = `LEAVE IN ${mins(left)}m`; cls = "leave_in";
+    action = state.clockView ? `LEAVE AT ${hm(rec.leave_at)}` : `LEAVE IN ${mins(left)}m`;
+    cls = "leave_in";
   }
   let reason = rec.reason;
   if (rec.approx) reason = `${kindWord(rec.kind)} time, not live · ${reason}`;
@@ -87,7 +98,8 @@ function heroFor(data, disconnected, now) {
   if (rec.alt) {
     const altLeft = rec.alt.leave_at - now;
     alt = altLeft >= 0
-      ? `Safer: BUS ${rec.alt.route} · leave in ${mins(altLeft)}m`
+      ? `Safer: BUS ${rec.alt.route} · ` +
+        (state.clockView ? `leave ${hm(rec.alt.leave_at)}` : `leave in ${mins(altLeft)}m`)
       : `Safer: BUS ${rec.alt.route}`;
   }
   return {
@@ -120,7 +132,7 @@ function renderRows(data, now) {
         cell.classList.add("empty");
       } else {
         const m = mins(a.at - now);
-        const text = m <= 0 ? "now" : `${m}m`;
+        const text = state.clockView ? hm(a.at) : m <= 0 ? "now" : `${m}m`;
         const notLive = a.kind !== "live";
         cell.textContent = notLive ? `≈${text}` : text;
         if (notLive) cell.classList.add("approx");
@@ -195,6 +207,7 @@ function render() {
   $("modeLabel").textContent = data.label.toUpperCase();
 
   const [badge, badgeCls] = badgeFor(data, disconnected);
+  $("clock").textContent = etClock.format(new Date(now * 1000));
   $("badge").textContent = badge;
   $("badge").className = `badge ${badgeCls}`;
 
@@ -261,6 +274,17 @@ async function init() {
     poll();
   });
   $("refreshBtn").addEventListener("click", poll);
+  const syncView = () => {
+    $("viewBtn").textContent = state.clockView ? "Show countdown" : "Show schedule";
+    $("viewBtn").setAttribute("aria-pressed", String(state.clockView));
+  };
+  syncView();
+  $("viewBtn").addEventListener("click", () => {
+    state.clockView = !state.clockView;
+    store.set("sparrow.view", state.clockView ? "clock" : "countdown");
+    syncView();
+    render();
+  });
   $("simSelect").addEventListener("change", (e) => { state.sim = e.target.value; state.data = null; poll(); });
   $("netSim").addEventListener("change", (e) => { state.netDown = e.target.checked; poll(); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });

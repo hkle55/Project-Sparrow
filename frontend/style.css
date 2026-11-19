@@ -182,3 +182,17 @@ html, body {
 .device * { font-weight: 400 !important; }
 .device .row .t.approx { font-style: normal; }  /* faux-italic garbles pixel glyphs; ≈ and color mark it */
 .device .reason, .device .foot { font-size: 15px; }  /* VT323 runs small; keep secondary text readable */
+
+/* Live Eastern-time clock in the top bar. */
+.clock { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Arrival logging, promoted to a full-width button above the controls. */
+a.hw.observe { display: block; text-align: center; text-decoration: none; }
+
+/* Dev tools tucked away in a collapsible section. */
+.dev { border: 1px solid #3a3a3a; border-radius: 12px; padding: 8px 12px; color: var(--dim); }
+.dev summary { cursor: pointer; font-weight: 700; }
+.dev[open] summary { margin-bottom: 8px; }
+.dev .sim { margin-top: 6px; }
+.dev .sim { flex-wrap: wrap; }
+.dev .sim select { min-width: 0; max-width: 100%; }  /* long scenario names mustn't overflow */
