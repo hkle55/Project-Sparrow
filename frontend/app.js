@@ -122,7 +122,7 @@ function renderRows(data, now) {
         const m = mins(a.at - now);
         const text = m <= 0 ? "now" : `${m}m`;
         const notLive = a.kind !== "live";
-        cell.textContent = notLive ? `~${text}` : text;
+        cell.textContent = notLive ? `≈${text}` : text;
         if (notLive) cell.classList.add("approx");
         // catch state can only get worse as time passes; recompute locally
         const slack = a.leave_at - now;
@@ -135,6 +135,45 @@ function renderRows(data, now) {
     }
     rows.append(row);
   }
+}
+
+// --- Pixel-art scene: the bus's distance from the stop tracks the recommended bus --------
+// Decorative only (the text says everything); 15+ min away = far left, arriving = at the stop.
+const SCENE_W = 120, SCENE_RANGE_S = 15 * 60;
+const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+function drawBus(c, x, y, frame) {
+  const px = (dx, dy, w, h, col) => { c.fillStyle = col; c.fillRect(x + dx, y + dy, w, h); };
+  px(1, 0, 22, 1, "#e8e8e8");                       // roof
+  px(0, 1, 24, 9, "#e8e8e8");                       // body
+  for (let i = 0; i < 4; i++) px(2 + i * 4, 2, 3, 3, "#33414f");  // side windows
+  px(18, 2, 2, 7, "#33414f");                       // door
+  px(21, 2, 3, 4, "#7fb3e0");                       // windshield
+  px(0, 6, 18, 1, "#d0021b"); px(20, 6, 4, 1, "#d0021b");         // stripe
+  px(23, 8, 1, 1, "#ffd23f");                       // headlight
+  for (const wx of [3, 16]) {                       // wheels, hubs turn while it moves
+    px(wx, 9, 5, 3, "#111");
+    px(wx + 1 + frame, 10, 1, 1, "#999");
+  }
+}
+
+function drawScene(rec, now) {
+  const c = $("scene").getContext("2d");
+  c.clearRect(0, 0, SCENE_W, 26);
+  c.globalAlpha = 1;
+  c.fillStyle = "#3a3a3a"; c.fillRect(0, 21, SCENE_W, 1);                 // curb
+  for (let x = 2; x < SCENE_W; x += 8) { c.fillStyle = "#2a2a2a"; c.fillRect(x, 24, 4, 1); }  // lane dashes
+  c.fillStyle = "#8a8a8a"; c.fillRect(110, 7, 1, 14);                     // stop pole
+  c.fillStyle = "#2f80ed"; c.fillRect(106, 3, 9, 6);                      // stop sign
+  c.fillStyle = "#fff"; c.fillRect(108, 5, 5, 2);
+  if (!rec) return;
+  const untilBus = rec.arrives_at - now;
+  const p = Math.min(1, Math.max(0, 1 - untilBus / SCENE_RANGE_S));
+  const x = Math.round(-4 + p * (104 - 24 + 4));     // bus front reaches the stop on arrival
+  const moving = untilBus > 0 && !reduceMotion;
+  if (rec.approx) c.globalAlpha = 0.45;              // not live: a "ghost" bus
+  drawBus(c, x, 10, moving ? Math.floor(now) % 2 : 0);
+  c.globalAlpha = 1;
 }
 
 function render() {
@@ -166,6 +205,7 @@ function render() {
   $("alt").textContent = hero.alt || "";
   $("alt").hidden = !hero.alt;
   $("hero").className = `hero ${hero.cls}`;
+  drawScene(data.configured ? data.rec : null, now);
 
   renderRows(data, now);
 

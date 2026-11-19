@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <title>Sparrow</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -19,6 +20,7 @@
       </header>
 
       <div class="hero" id="hero">
+        <canvas class="scene" id="scene" width="120" height="26" aria-hidden="true"></canvas>
         <div class="route" id="route">&nbsp;</div>
         <div class="action" id="action">LOADING</div>
         <div class="reason" id="reason">&nbsp;</div>
@@ -46,7 +48,7 @@
       </label>
       <label class="sim"><input type="checkbox" id="netSim"> Simulate lost connection</label>
       <p class="legend">
-        <b>12m</b> live · <i>~12m</i> scheduled/estimated (not live) ·
+        <b>12m</b> live · <i>≈12m</i> scheduled/estimated (not live) ·
         <b>12m!</b> tight (cuts into the buffer) · <s>12m</s> can't make it
       </p>
       <p class="legend"><a href="/observe" style="color:inherit">Log a bus arrival →</a></p>

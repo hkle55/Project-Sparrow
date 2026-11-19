@@ -84,6 +84,8 @@ html, body {
   text-align: center;
   gap: 4px;
 }
+/* Pixel-art scene: drawn at 120x26 and scaled up with crisp pixels. */
+.scene { width: 100%; max-width: 300px; aspect-ratio: 120 / 26; image-rendering: pixelated; }
 .route { font-size: 22px; font-weight: 700; letter-spacing: 0.1em; }
 .action {
   font-size: clamp(30px, 11vw, 44px);
@@ -108,7 +110,7 @@ html, body {
 }
 .alt { font-size: 14px; font-weight: 700; padding-top: 4px; }
 .hero.none .action { font-size: 22px; color: var(--dim); }
-.hero.approx .action::after { content: " ~"; color: var(--warn); }
+.hero.approx .action::after { content: " ≈"; color: var(--warn); }
 
 @media (prefers-reduced-motion: reduce) {
   .hero.leave_now .action { animation: none; }
@@ -173,3 +175,10 @@ html, body {
 .sim select { flex: 1; padding: 6px; font: inherit; }
 .legend { color: var(--dim); font-size: 12px; margin: 0; line-height: 1.5; }
 .legend i { color: var(--warn); }
+
+/* Pixel font for the device panel only. Falls back to the monospace stack if it can't load.
+   VT323 has a single weight, so faux-bold is turned off to keep the pixels crisp. */
+.device { font-family: "VT323", ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.device * { font-weight: 400 !important; }
+.device .row .t.approx { font-style: normal; }  /* faux-italic garbles pixel glyphs; ≈ and color mark it */
+.device .reason, .device .foot { font-size: 15px; }  /* VT323 runs small; keep secondary text readable */
