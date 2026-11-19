@@ -16,6 +16,7 @@
       <header class="topbar">
         <span class="brand">SPARROW</span>
         <span class="mode" id="modeLabel">—</span>
+        <span class="clock" id="clock"></span>
         <span class="badge" id="badge">…</span>
       </header>
 
@@ -36,22 +37,26 @@
     </section>
 
     <div class="controls">
+      <a class="hw observe" href="/observe">Log a bus arrival</a>
       <div class="buttons">
         <button type="button" id="modeBtn" class="hw">Switch mode</button>
+        <button type="button" id="viewBtn" class="hw" aria-pressed="false">Show schedule</button>
         <button type="button" id="refreshBtn" class="hw">Refresh</button>
       </div>
-      <label class="sim">
-        Simulation
-        <select id="simSelect">
-          <option value="">Off (real SEPTA data)</option>
-        </select>
-      </label>
-      <label class="sim"><input type="checkbox" id="netSim"> Simulate lost connection</label>
       <p class="legend">
         <b>12m</b> live · <i>≈12m</i> scheduled/estimated (not live) ·
         <b>12m!</b> tight (cuts into the buffer) · <s>12m</s> can't make it
       </p>
-      <p class="legend"><a href="/observe" style="color:inherit">Log a bus arrival →</a></p>
+      <details class="dev">
+        <summary>Dev</summary>
+        <label class="sim">
+          Simulation
+          <select id="simSelect">
+            <option value="">Off (real SEPTA data)</option>
+          </select>
+        </label>
+        <label class="sim"><input type="checkbox" id="netSim"> Simulate lost connection</label>
+      </details>
     </div>
   </main>
   <script src="/static/app.js"></script>
