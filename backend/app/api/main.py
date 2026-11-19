@@ -112,6 +112,16 @@ def create_app(
                                     secure=request.url.scheme == "https", samesite="lax")
             return response
 
+    @app.middleware("http")
+    async def revalidate_frontend(request: Request, call_next):
+        # Pages and their JS/CSS must be re-checked on every load; otherwise a browser can
+        # pair new HTML with yesterday's app.js after an update. Unchanged files are a cheap 304.
+        response = await call_next(request)
+        path = request.url.path
+        if path in ("/", "/device", "/observe") or path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok"}

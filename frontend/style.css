@@ -187,7 +187,7 @@ html, body {
 .clock { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Arrival logging, promoted to a full-width button above the controls. */
-a.hw.observe { display: block; text-align: center; text-decoration: none; }
+a.hw.observe { display: block; flex: none; align-self: stretch; text-align: center; text-decoration: none; }
 
 /* Dev tools tucked away in a collapsible section. */
 .dev { border: 1px solid #3a3a3a; border-radius: 12px; padding: 8px 12px; color: var(--dim); }
