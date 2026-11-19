@@ -1,0 +1,13 @@
+# Lint config for the Tufty MicroPython app (CI: ruff check firmware-tufty).
+line-length = 100
+target-version = "py312"
+extend-exclude = ["sparrow/roots.py"]
+
+[lint]
+select = ["E", "F", "I", "B"]
+
+[lint.per-file-ignores]
+# Badgeware injects badge, screen, color, shape, font, rect, run, HIRES and BUTTON_* as
+# built-ins, and apps must chdir/sys.path before importing their own modules.
+"sparrow/__init__.py" = ["F821", "E402"]
+"main.py" = ["F821"]
