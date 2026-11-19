@@ -50,6 +50,15 @@ Details: [docs/architecture.md](docs/architecture.md). Data source findings:
 
 ## Run it locally
 
+**Easiest (macOS):** double-click **`Start Sparrow.command`** in the project folder in Finder.
+The first time, it sets everything up (about a minute). After that it starts in a few
+seconds and opens http://127.0.0.1:8000 in your browser. Close the Terminal window it opens
+to stop Sparrow. It needs Python 3.12+ (macOS's built-in Python is too old) and links you
+to the installer if it can't find one. If macOS refuses to open it, right-click it, choose
+Open, then confirm.
+
+**Manual setup:**
+
 Requires Python 3.12+.
 
 ```bash
