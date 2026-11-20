@@ -13,7 +13,7 @@ const store = {
 };
 
 const state = {
-  mode: store.get("sparrow.mode", "work"),
+  mode: "auto",        // server picks work/home by time of day; Switch mode overrides until reload
   clockView: store.get("sparrow.view", "countdown") === "clock",  // show ET clock times
   sim: "",
   netDown: false,
@@ -21,7 +21,7 @@ const state = {
   skew: 0,             // server_now - client_now (seconds)
   lastOk: 0,           // client time of last successful poll (seconds)
   lastError: null,
-  modes: ["work", "home"],
+  modes: ["auto", "work", "home"],
 };
 
 const clientNow = () => Date.now() / 1000;
@@ -204,7 +204,7 @@ function render() {
 
   $("device").classList.toggle("simulated", !!data.simulated);
   $("simBanner").hidden = !data.simulated;
-  $("modeLabel").textContent = data.label.toUpperCase();
+  $("modeLabel").textContent = data.label.toUpperCase() + (data.auto ? " · AUTO" : "");
 
   const [badge, badgeCls] = badgeFor(data, disconnected);
   $("clock").textContent = etClock.format(new Date(now * 1000));
@@ -256,8 +256,7 @@ async function init() {
       fetch("/api/v1/modes").then((r) => r.json()),
       fetch("/api/v1/scenarios").then((r) => r.json()),
     ]);
-    state.modes = modes.map((m) => m.mode);
-    if (!state.modes.includes(state.mode)) state.mode = state.modes[0];
+    state.modes = ["auto", ...modes.filter((m) => m.configured).map((m) => m.mode)];
     for (const s of scenarios) {
       const opt = document.createElement("option");
       opt.value = s.id;
@@ -269,7 +268,7 @@ async function init() {
   $("modeBtn").addEventListener("click", () => {
     const i = state.modes.indexOf(state.mode);
     state.mode = state.modes[(i + 1) % state.modes.length];
-    store.set("sparrow.mode", state.mode);
+    $("modeLabel").textContent = `${state.mode.toUpperCase()}…`;  // until the new data arrives
     state.data = null;
     poll();
   });

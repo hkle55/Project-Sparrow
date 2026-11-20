@@ -13,6 +13,7 @@ import json
 import os
 import tomllib
 from dataclasses import dataclass, field
+from datetime import datetime, time
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -58,6 +59,10 @@ class Settings:
     stale_after_s: int = 120
     discard_after_s: int = 600
     arrivals_per_route: int = 3
+    # Auto mode (local time, HH:MM): the work commute from work_after until home_after,
+    # the home commute the rest of the day (including after midnight).
+    work_after: str = "03:00"
+    home_after: str = "14:00"
 
     @property
     def tz(self) -> ZoneInfo:
@@ -69,6 +74,27 @@ class SparrowConfig:
     settings: Settings
     modes: dict[str, CommuteMode] = field(default_factory=dict)
     source: str = ""
+
+    def auto_mode(self, now: datetime) -> CommuteMode | None:
+        """The commute to show at `now`: work in the morning window, home otherwise.
+        Falls back to any configured mode if the one for this time isn't set up."""
+        local = now.astimezone(self.settings.tz).time()
+        work_from = _hhmm(self.settings.work_after, "work_after")
+        home_from = _hhmm(self.settings.home_after, "home_after")
+        want = "work" if work_from <= local < home_from else "home"
+        ordered = sorted(self.modes.values(), key=lambda m: m.key != want)
+        for m in ordered:
+            if m.configured:
+                return m
+        return ordered[0] if ordered else None
+
+
+def _hhmm(value: str, name: str) -> time:
+    try:
+        hours, minutes = value.split(":")
+        return time(int(hours), int(minutes))
+    except ValueError as exc:
+        raise ConfigError(f"settings.{name} must be HH:MM, got {value!r}") from exc
 
 
 def _parse_option(raw: dict, where: str) -> RouteOption:
@@ -100,6 +126,8 @@ def parse_config(data: dict, source: str = "<memory>") -> SparrowConfig:
         ZoneInfo(settings.timezone)
     except (ZoneInfoNotFoundError, ValueError) as exc:
         raise ConfigError(f"unknown timezone {settings.timezone!r}") from exc
+    if _hhmm(settings.work_after, "work_after") >= _hhmm(settings.home_after, "home_after"):
+        raise ConfigError("settings.work_after must be earlier than settings.home_after")
 
     modes: dict[str, CommuteMode] = {}
     for key, raw_mode in data.get("modes", {}).items():

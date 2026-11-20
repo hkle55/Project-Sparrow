@@ -140,21 +140,25 @@ def create_app(
 
     @app.get("/api/v1/commute/{mode}", response_model=CommuteOut, response_model_exclude_none=True)
     async def commute(mode: str, sim: str | None = Query(default=None)) -> CommuteOut:
+        """`mode` is a configured commute key, or "auto" to pick by time of day."""
         cfg: SparrowConfig = app.state.config
-        m = cfg.modes.get(mode)
+        auto = mode == "auto"
+        m = cfg.auto_mode(now_utc()) if auto else cfg.modes.get(mode)
         if m is None:
             raise HTTPException(404, f"unknown mode {mode!r}")
         if sim is not None:
             if sim not in SCENARIOS:
                 raise HTTPException(404, f"unknown scenario {sim!r}")
-            return simulate(sim, m, cfg.settings, now_utc())
-        return await commute_status(app.state.client, m, cfg.settings, lambda: now_utc())
+            out = simulate(sim, m, cfg.settings, now_utc())
+        else:
+            out = await commute_status(app.state.client, m, cfg.settings, lambda: now_utc())
+        return out.model_copy(update={"auto": True}) if auto else out
 
     @app.get("/api/v1/device", response_model=DeviceOut, response_model_exclude_none=True)
     async def device(
-        mode: str = Query(default="work"), sim: str | None = Query(default=None)
+        mode: str = Query(default="auto"), sim: str | None = Query(default=None)
     ) -> DeviceOut:
-        """Compact payload for the physical Sparrow. V1 shows the work commute only."""
+        """Compact payload for the physical Sparrow. Picks work or home by time of day."""
         return to_device(await commute(mode, sim))
 
     # --- prediction validation ---------------------------------------------------------

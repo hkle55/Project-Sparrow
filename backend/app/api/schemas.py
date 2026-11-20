@@ -68,6 +68,7 @@ class CommuteOut(BaseModel):
     v: int = 1
     mode: str
     label: str
+    auto: bool | None = None  # true when the server picked `mode` by time of day
     configured: bool
     simulated: bool = False
     scenario: str | None = None
