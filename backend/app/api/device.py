@@ -1,4 +1,4 @@
-"""Compact payload for the physical Sparrow (ESP32). V1 is work-commute only.
+"""Compact payload for the physical Sparrow (ESP32). Defaults to auto mode (work or home by time).
 
 It's derived from the same CommuteOut the web app gets, so the device and the web
 simulator can never disagree. Short keys keep it around 400 bytes.
@@ -6,6 +6,7 @@ simulator can never disagree. Short keys keep it around 400 bytes.
     {
       "v": 1,
       "now": 1795041111,          # server time (epoch s); the device counts down from this
+      "m": "work",                # which commute this is (work | home)
       "st": "live",               # live | stale | offline (SEPTA data status)
       "age": 28,                  # seconds since SEPTA generated the data (omitted if none)
       "rdy": 180,                 # GET READY threshold (s); LEAVE NOW is < 60 s
@@ -67,6 +68,7 @@ class DeviceRow(BaseModel):
 class DeviceOut(BaseModel):
     v: int = 1
     now: int
+    m: str
     st: str
     age: int | None = None
     rdy: int = 180
@@ -90,6 +92,7 @@ def to_device(c: CommuteOut) -> DeviceOut:
         )
     return DeviceOut(
         now=c.now,
+        m=c.mode,
         st=c.data.status,
         age=c.data.feed_age_s,
         rdy=c.rec.ready_s if c.rec else 180,

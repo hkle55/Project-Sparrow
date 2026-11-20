@@ -11,6 +11,8 @@ tight_max_wait_min = 10.0        # recommend a TIGHT bus only if the next safe b
 stale_after_s = 120              # live data older than this is shown as STALE
 discard_after_s = 600            # live data older than this is not used at all
 arrivals_per_route = 3
+work_after = "03:00"              # auto mode: show the work commute from this time (local)...
+home_after = "14:00"              # ...until this time, then the home commute
 
 [modes.work]
 label = "To Work"

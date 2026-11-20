@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -51,12 +52,12 @@ class Upstream:
         return httpx.Response(200, json=self.schedules.get(key, {}))
 
 
-def app_for(tc, **kw):
+def app_for(tc, config=None, **kw):
     kw = {"db_path": ":memory:", "collect": False, "access_token": "", **kw}
-    return main_mod.create_app(CFG, tc, **kw)
+    return main_mod.create_app(config or CFG, tc, **kw)
 
 
-def make_client(upstream, monkeypatch, now=NOW):
+def make_client(upstream, monkeypatch, now=NOW, config=None):
     monkeypatch.setattr(main_mod, "now_utc", lambda: now)
     tc = TransitClient(
         {"40", "42"},
@@ -66,7 +67,7 @@ def make_client(upstream, monkeypatch, now=NOW):
         clock=lambda: now,
         attempts=1,
     )
-    return TestClient(app_for(tc))
+    return TestClient(app_for(tc, config))
 
 
 @pytest.fixture
@@ -300,6 +301,21 @@ def test_device_stale_and_offline_kinds(upstream, monkeypatch):
         off = c.get("/api/v1/device?sim=offline").json()
     assert stale["st"] == "stale" and stale["rec"]["k"] == "o" and stale["rec"]["x"] is True
     assert off["st"] == "offline" and {k for r in off["rows"] for _, k in r["t"]} == {"s"}
+
+
+def test_auto_mode_picks_by_time_and_device_defaults_to_it(upstream, monkeypatch):
+    cfg = load_config(EXAMPLE_CONFIG)
+    home = replace(cfg.modes["work"], key="home", label="To Home")
+    both = replace(cfg, modes={"work": cfg.modes["work"], "home": home})
+    for now, expected in [(NOW.replace(hour=13), "work"), (NOW, "home")]:  # 8 am / 5 pm ET
+        with make_client(upstream, monkeypatch, now=now, config=both) as c:
+            web = c.get("/api/v1/commute/auto").json()
+            dev = c.get("/api/v1/device").json()
+        assert web["mode"] == expected and web["auto"] is True
+        assert dev["m"] == expected
+    with make_client(upstream, monkeypatch, config=both) as c:
+        assert "auto" not in c.get("/api/v1/commute/work").json()  # explicit mode stays explicit
+        assert c.get("/api/v1/device?mode=work").json()["m"] == "work"
 
 
 def test_device_unknown_mode_404(upstream, monkeypatch):
