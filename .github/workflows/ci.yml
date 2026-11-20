@@ -61,5 +61,5 @@ jobs:
       - run: pip install platformio
       - name: Core logic tests (native)
         run: pio test -e native
-      - name: Build for M5Stack StickS3 (placeholder secrets)
-        run: cp include/secrets.example.h include/secrets.h && pio run -e m5sticks3
+      - name: Build for M5Stack StickS3 and CoreS3 (placeholder secrets)
+        run: cp include/secrets.example.h include/secrets.h && pio run -e m5sticks3 -e m5cores3
