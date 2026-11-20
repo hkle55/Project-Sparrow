@@ -1,6 +1,6 @@
-# Fly.io deployment for Sparrow. Not deployed yet: see docs/deployment.md.
-# Set `app` to the name you create with `fly apps create`.
-app = "sparrow-CHANGE-ME"
+# Fly.io deployment for Sparrow (live at sparrow-k7q2.fly.dev). See docs/deployment.md.
+# `app` must match the app created with `fly apps create`.
+app = "sparrow-k7q2"
 primary_region = "iad"  # Ashburn, VA: closest Fly region to Philadelphia
 
 [build]

@@ -8,8 +8,8 @@ _Last updated: 2026-11-19 (night). V1 = a physical Sparrow for the work commute 
 |---|---|---|
 | 1. Software prototype | Live SEPTA data, recommendation engine (walk + 2-min buffer, 40 preferred, TIGHT), web app, device preview, `/observe` | **Done** |
 | 2. Validation tooling | Collector, GPS-inferred and manual arrivals, accuracy report | **Done** (no real data yet) |
-| 3. Hosting | Dockerfile, fly.toml, access token, deploy workflow | **Prepared. Waiting on owner approval (~$2–3/mo Fly.io) and account** |
-| 4. Data collection | Collector runs 24/7 on the host (GPS-inferred arrivals; no taps from her, since it's a surprise) | Blocked on phase 3 |
+| 3. Hosting | Fly.io app `sparrow-k7q2` (always on, ~$2–3/mo), access token, deploy workflow | **Live** (auto-deploy pending GitHub secret) |
+| 4. Data collection | Collector runs 24/7 on the host (GPS-inferred arrivals; no taps from her, since it's a surprise) | **Running** since 2026-11-20 |
 | 5. Tune | Read the validation report; adjust `safety_buffer_min` if P95 early error says so | Blocked on phase 4 |
 | 6. Hardware | CoreS3 vs Tufty 2350. Both firmware versions written (draft PRs #14, #15) | **Owner picks next session** |
 | 7. Device bring-up | Flash, measure battery life and wake-to-data time, check readability on her walk | Blocked on phase 6 |
@@ -59,6 +59,6 @@ Double-click `Start Sparrow.command` (macOS) or see README. It needs Python 3.12
 ## Owner decisions pending
 
 1. Device: CoreS3 or Tufty 2350 (then order it this week).
-2. Hosting: approve Fly.io (~$2-3/mo) or Railway (~$5/mo), create the account. Required for the gift.
+2. Auto-deploy: add the `FLY_API_TOKEN` secret and `DEPLOY_ENABLED=true` variable in GitHub.
 3. Optional: allow `apt install libsdl2-dev` in the cloud workspace, to render the real CoreS3
    firmware drawing to screenshots before the device arrives.

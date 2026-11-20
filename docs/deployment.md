@@ -1,7 +1,7 @@
 # Deployment (Milestone 5)
 
-**Status: prepared, not deployed.** Nothing has been purchased or created. Owner approval is
-needed before anything that costs money.
+**Status: deployed** on Fly.io as `sparrow-k7q2` (2026-11-20), approved by the owner.
+Auto-deploy from GitHub turns on once `FLY_API_TOKEN` and `DEPLOY_ENABLED` are set (below).
 
 ## Requirements
 
