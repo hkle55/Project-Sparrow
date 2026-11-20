@@ -63,3 +63,18 @@ jobs:
         run: pio test -e native
       - name: Build for M5Stack StickS3 (placeholder secrets)
         run: cp include/secrets.example.h include/secrets.h && pio run -e m5sticks3
+
+  tufty:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest ruff mpy-cross
+      - name: Logic and HTTPS helper tests (CPython)
+        run: pytest -q firmware-tufty/tests
+      - name: Lint
+        run: ruff check firmware-tufty
+      - name: MicroPython compile check
+        run: for f in firmware-tufty/sparrow/*.py firmware-tufty/main.py; do mpy-cross -o /tmp/out.mpy "$f"; done
