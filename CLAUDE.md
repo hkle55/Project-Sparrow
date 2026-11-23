@@ -7,8 +7,8 @@ features**: never present scheduled, estimated, stale, or simulated data as live
 
 Start every session by reading `docs/handoff.md`, then `PROJECT_PLAN.md`.
 
-**V1 scope:** a physical device for the work commute only (Route 40 at Lombard & 21st,
-Route 42 at Walnut & 21st). There's no mode toggle on the device, and the return commute
+**V1 scope:** a physical device for the work commute only (Route 40 and Route 42 at her
+real stops, kept in the private config). There's no mode toggle on the device, and the return commute
 is out of scope and not a blocker. Keep backend home-mode support for later.
 
 ## Layout
