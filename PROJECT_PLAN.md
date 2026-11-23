@@ -4,8 +4,8 @@
 
 **V1 = a physical Sparrow for the morning commute to work, only.**
 
-- Route 40 at Lombard & 21st (preferred, 4-min walk) and Route 42 at Walnut & 21st (7-min
-  walk). Next three arrivals for each.
+- Route 40 (preferred) and Route 42 at her real stops, which live only in the private config.
+  Next three arrivals for each.
 - Keep the existing recommendation engine, 2-min safety buffer, and tight-connection logic.
 - Prioritize instant access to the countdown.
 - No work/home toggle on the device. The backend keeps home-mode support for later.
