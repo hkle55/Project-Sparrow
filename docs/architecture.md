@@ -64,7 +64,9 @@ local wall-clock date-times. These are parsed in America/New_York, and during th
 repeated fall-back hour the earlier instant is chosen (the conservative choice). GTFS
 "25:10:00"-style service-day times never reach runtime, because static GTFS isn't loaded.
 
-## Future hardware integration
+## Hardware integration (shelved)
+
+The device was dropped in favor of the web app. The design below is kept for reference.
 
 The ESP32 calls `/api/v1/commute/{mode}` every 15–30 s and renders `rec`
 (route / action / leave_at) plus three `at` times per route. It counts down locally

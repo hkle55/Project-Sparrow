@@ -14,10 +14,11 @@
 - Workstreams in parallel: deployment, prediction collection, hardware selection,
   firmware preparation.
 
-## Current milestone
+## Outcome (2026-11-23)
 
-**Parallel:** M5 deploy (awaiting spend approval), M4 data collection (starts at deploy),
-M6 hardware selection (recommendation ready), M7 firmware preparation.
+**Complete.** The web app is the product. The physical device (M6–M8) was dropped: she
+prefers the web app. Hosting is live with auto-deploy, and the collector is running.
+Later additions beyond the V1 scope above: the home commute and auto mode.
 
 ## Milestones
 
@@ -26,12 +27,12 @@ M6 hardware selection (recommendation ready), M7 firmware preparation.
 | 0 | Project initialization | Done |
 | 1 | SEPTA research and data retrieval | Done |
 | 2 | Prediction and recommendation engine and API | Done |
-| 3 | Web device simulator | Done (local) |
-| 4 | Prediction validation (observation logging and report) | Tooling done; collecting data |
-| 5 | Remote deployment (research and recommendation, no paid infra without approval) | Prepared; awaiting approval to spend ~$2–3/mo |
-| 6 | Hardware research and BOM (no purchases without approval) | In progress |
-| 7 | ESP32 firmware | Preparing (device API + firmware core) |
-| 8 | Battery and physical product | Not started |
+| 3 | Web device simulator | Done (hosted) |
+| 4 | Prediction validation (observation logging and report) | Tooling done; collecting since 2026-11-20 |
+| 5 | Remote deployment | Done: Fly.io, ~$2–3/mo, auto-deploy from `main` |
+| 6 | Hardware research and BOM | Dropped (research kept in docs/hardware.md) |
+| 7 | ESP32 firmware | Dropped (written, never flashed; branches kept) |
+| 8 | Battery and physical product | Dropped |
 
 ## Acceptance criteria (abridged; full text in the master spec)
 

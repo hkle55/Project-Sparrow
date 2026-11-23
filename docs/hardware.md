@@ -1,5 +1,8 @@
 # Hardware selection (Milestone 6)
 
+> **Dropped (2026-11-23).** She prefers the web app, so no device was bought. Kept for the
+> record; see docs/handoff.md for the firmware branches.
+
 **Status: recommendation ready. Nothing purchased.** Buying anything needs owner approval.
 
 ## What V1 needs

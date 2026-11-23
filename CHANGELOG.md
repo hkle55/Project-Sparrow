@@ -4,6 +4,12 @@ All notable changes, grouped by milestone. Dates are in America/New_York.
 
 ## Unreleased
 
+### Wrap-up (2026-11-23)
+- Hardware dropped at the user's request; the web app is the final product. Device firmware
+  PRs (#14 CoreS3, #15 Tufty) closed unmerged, branches kept.
+- Hosting live on Fly.io with auto-deploy from `main`; collector running since 2026-11-20.
+- Added since V1: home commute, auto mode by time of day, seasonal pixel scene.
+
 ### V1 device API (work commute only)
 - `GET /api/v1/device`: ~330-byte payload for the ESP32, derived from the same pipeline as
   the web app (short keys; the device recomputes countdown and catch state locally).
