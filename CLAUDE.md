@@ -2,15 +2,15 @@
 
 Sparrow is a pocket transit companion for one SEPTA bus commuter in Philadelphia. It
 answers: which bus, when it arrives, and when to leave. The backend does all the transit
-work. The web UI (and later an ESP32 device) is a thin client. **Accuracy beats
+work. The web UI is a thin client. **Accuracy beats
 features**: never present scheduled, estimated, stale, or simulated data as live.
 
 Start every session by reading `docs/handoff.md`, then `PROJECT_PLAN.md`.
 
-**V1 scope:** a physical device for the commute (Route 40 at Lombard & 21st, Route 42 at
-Walnut & 21st to work; Route 40 eastbound from the lab to home). There's no mode toggle on the
-device: `mode=auto` (the device default) shows work in the morning and home after
-`settings.home_after` (default 14:00 ET). The web app starts in auto; Switch mode overrides it.
+**Status: complete.** The hosted web app is the product; the physical device was dropped
+(firmware branches kept, unmerged). `mode=auto` shows the work commute in the morning and
+home after `settings.home_after` (default 14:00 ET). The web app starts in auto; Switch mode
+overrides it. Merges to `main` auto-deploy to Fly.io after CI passes.
 
 ## Layout
 
@@ -25,7 +25,7 @@ device: `mode=auto` (the device default) shows work in the morning and home afte
   of the physical screen (from `/api/v1/device`), and `observe.html` is manual arrival logging
 - `config/commute.example.toml`: public example profile. The real one comes from `$SPARROW_CONFIG_JSON`
   (set on the `project-sparrow` cloud environment), `$SPARROW_CONFIG_TOML`, or `config/commute.local.toml` (gitignored)
-- `Dockerfile`, `fly.toml`, `.github/workflows/deploy.yml`: hosting (not deployed; see docs/deployment.md)
+- `Dockerfile`, `fly.toml`, `.github/workflows/deploy.yml`: hosting on Fly.io (live; see docs/deployment.md)
 - `scripts/`: CLI tools (`next_arrivals.py`, `find_stops.py`)
 - `docs/`: `transit-research.md`, `architecture.md`, `handoff.md`
 
@@ -75,6 +75,6 @@ by hand in a fresh session.
 
 ## Needs owner approval
 
-Spending money, buying hardware, paid hosting (the Fly.io deploy is prepared but NOT
-approved), changing repo visibility (decided: stays public), publishing personal info,
-destructive git operations. No hardware work until the owner says so.
+Spending money, buying hardware, new paid services (the Fly.io app is approved and live),
+changing repo visibility (decided: stays public), publishing personal info,
+destructive git operations. Hardware is dropped; don't restart it unless the owner asks.

@@ -13,9 +13,9 @@ math. It's explicit whenever the data isn't live.
 
 ## Status
 
-Working software prototype: backend, API, and a web "device simulator" running on
-real SEPTA data. Hardware (ESP32) comes after the predictions are validated. See
-[PROJECT_PLAN.md](PROJECT_PLAN.md).
+**Complete.** A hosted web app on real SEPTA data, used daily from a phone home-screen
+shortcut. A physical ESP32 device was designed and its firmware written, but it was dropped
+because the web app turned out to be enough. See [docs/handoff.md](docs/handoff.md).
 
 What works today:
 - Next 3 arrivals per route at the configured stops (Route 40 and Route 42 for work)
@@ -23,7 +23,7 @@ What works today:
 - Departure countdown (walk + 2 min buffer), with GET READY / LEAVE NOW states
 - Route 40 preference, with Route 42 when it boards more than 5 min sooner
 - Handles passed, canceled, and detoured buses, stale feeds, SEPTA outages, and lost connection
-- Work/home toggle. Home shows "not set up" until its stop is configured
+- Work and home commutes. Auto mode picks one by time of day; Switch mode overrides it
 - TIGHT CONNECTION state when a bus is reachable only by cutting into the buffer and no
   safe bus comes soon after
 - Simulation mode with labeled scenarios
@@ -42,7 +42,7 @@ SEPTA BusSchedules (JSON) ──┴─> TransitClient (cache, retries, last-good
                                    │
                     FastAPI /api/v1/commute/{mode}
                          /               \
-              web simulator          ESP32 (later)
+              web app             ESP32 (shelved)
 ```
 
 Details: [docs/architecture.md](docs/architecture.md). Data source findings:
@@ -112,16 +112,16 @@ then flagged `"simulated": true`. Also: `/api/v1/modes`, `/api/v1/scenarios`, `/
 
 ## Known limitations
 
-- Prediction accuracy is not measured yet. The tooling exists, but it needs continuous
-  collection (hosting) and manual observations. The 2-min buffer is still a guess.
+- Prediction accuracy isn't measured yet. The collector has run since 2026-11-20; the
+  2-min buffer stays a guess until the validation report has a few weeks of data.
 - Live predictions only cover trips that already have a bus assigned (roughly the next
   30 min). Later buses are scheduled times.
 - BusSchedules times are minute-resolution.
 - Route choice compares boarding times, not door-to-door time.
-- Not deployed yet. Hosting is prepared and awaiting approval
-  ([docs/deployment.md](docs/deployment.md)). An optional access token is supported.
+- Hosted on one Fly.io machine with one volume, so a host failure means downtime until
+  Fly recovers it ([docs/deployment.md](docs/deployment.md)).
 
 ## Roadmap
 
-M4 prediction validation → M5 remote hosting → M6 hardware selection → M7 ESP32 firmware
-→ M8 battery and enclosure.
+Done: M0–M5 (engine, web app, validation tooling, hosting with auto-deploy). Optional:
+tune the safety buffer from the validation report. Dropped: M6–M8 (hardware).
